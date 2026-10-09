@@ -1,0 +1,50 @@
+plugins {
+    id 'java'
+}
+
+group = 'tmin.click.examples'
+version = '1.1.0'
+
+base {
+    archivesName = 'SKM-First-Broadcast'
+}
+
+repositories {
+    mavenLocal()
+
+    // Published artifact: https://github.com/VCyte/skm/packages
+    maven {
+        name = 'githubPackages'
+        url = uri('https://maven.pkg.github.com/vcyte/skm')
+
+        def githubUser = providers.gradleProperty('gpr.user')
+                .orElse(providers.environmentVariable('GITHUB_ACTOR')).orNull
+        def githubToken = providers.gradleProperty('gpr.key')
+                .orElse(providers.environmentVariable('GITHUB_TOKEN'))
+                .orElse(providers.environmentVariable('GH_TOKEN')).orNull
+        if (githubUser != null && githubToken != null) {
+            credentials {
+                username = githubUser
+                password = githubToken
+            }
+        }
+    }
+
+    maven { url = uri('https://repo.papermc.io/repository/maven-public/') }
+}
+
+dependencies {
+    compileOnly 'tmin.click:skm-api:1.1.0'
+    compileOnly 'io.papermc.paper:paper-api:26.2.build.124-stable'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 25
+    options.encoding = 'UTF-8'
+}
