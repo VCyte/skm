@@ -2,22 +2,17 @@ package io.github.skm.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.Screen;
 import io.github.skm.client.mixin.KeyMappingAccessor;
 import io.github.skm.client.mixin.KeyMappingCategoryAccessor;
 import io.github.skm.client.mixin.OptionsAccessor;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /** Creates exactly the mappings in the current server's action list and hides them outside that connection. */
 public final class ActionKeyBindings {
@@ -25,7 +20,6 @@ public final class ActionKeyBindings {
     private static final Map<String, ClientAction> ACTIONS = new LinkedHashMap<>();
     private static final Map<String, String> DYNAMIC_TRANSLATIONS = new HashMap<>();
     private static final Map<String, Boolean> HELD = new HashMap<>();
-    private static final Set<Screen> OPEN_SCREENS = Collections.newSetFromMap(new IdentityHashMap<>());
     private static KeyMapping[] BASE_MAPPINGS = new KeyMapping[0];
     private static KeyMapping.Category CATEGORY;
     private static boolean optionsReady;
@@ -42,10 +36,6 @@ public final class ActionKeyBindings {
     static void initialize(BridgeNetwork nextNetwork, FeedbackState nextFeedback) {
         network = nextNetwork;
         feedback = nextFeedback;
-        ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
-            OPEN_SCREENS.add(screen);
-            ScreenEvents.remove(screen).register(removed -> OPEN_SCREENS.remove(removed));
-        });
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (!optionsReady && client.options != null) {
                 BASE_MAPPINGS = client.options.keyMappings.clone();
@@ -59,7 +49,9 @@ public final class ActionKeyBindings {
                 pendingActions = List.of();
                 apply(signature, actions);
             }
-            tick(OPEN_SCREENS.isEmpty() && client.player != null);
+            // In Minecraft 26.2, the current Screen is owned by Gui, not Minecraft.
+            // Avoid cached ScreenEvents bookkeeping: a missed removed() event can permanently block inputs.
+            tick(client.player != null && client.gui.screen() == null);
         });
     }
 

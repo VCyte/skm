@@ -31,13 +31,14 @@ public final class FeedbackState {
         } else {
             cooldownEnds.remove(action);
         }
+        // Cooldowns remain enforced by the server and tracked locally, but are intentionally silent.
+        if ("cooldown".equals(reason)) return;
         if (("denied".equals(result) || "no_resource".equals(result) || "invalid_target".equals(result))
                 && System.currentTimeMillis() - lastNoticeAt > 500L) {
             lastNoticeAt = System.currentTimeMillis();
             Minecraft minecraft = Minecraft.getInstance();
             if (minecraft.player != null) {
-                String message = "cooldown".equals(reason) ? "스킬 쿨다운" : "스킬 사용 불가";
-                minecraft.player.sendOverlayMessage(Component.literal("[SKM] " + message));
+                minecraft.player.sendOverlayMessage(Component.literal("[SKM] 스킬 사용 불가"));
             }
         }
     }
