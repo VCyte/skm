@@ -1,0 +1,6 @@
+name: SKMFirstBroadcast
+version: '1.1.0'
+main: tmin.click.skm.example.FirstBroadcastPlugin
+api-version: '26.2'
+depend: [SKM]
+description: Example Paper plugin using the SKM API to broadcast skill.first.
