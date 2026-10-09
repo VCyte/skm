@@ -4,15 +4,15 @@
 
 > Paper 서버 플러그인만으로는 플레이어 PC의 조작 메뉴를 바꿀 수 없습니다. 각 클라이언트에도 Fabric API와 SKM Fabric 모드가 필요합니다.
 
-## 배포 파일 — 1.0.5
+## 배포 파일 — 서버/API 1.0.5 · 클라이언트 1.0.6
 
 | 파일 | 설치 위치 | 역할 |
 |---|---|---|
 | `SKM-Server-1.0.5.jar` | Paper 서버 `plugins/` | 서버별 action 목록, 검증, 실행 서비스 및 API 클래스 |
-| `skm-client-26.2-1.0.5.jar` | Fabric 클라이언트 `mods/` | 동적 키 등록, 서버별 키 설정, 입력 전달 |
+| `skm-client-26.2-1.0.6.jar` | Fabric 클라이언트 `mods/` | 동적 키 등록, 서버별 키 설정, 입력 전달 |
 | `skm-api-1.0.5.jar` | 소비 플러그인 compileOnly | 다른 Paper 플러그인이 컴파일할 SKM API |
 
-Maven 좌표: **`tmin.click:skm-api:1.0.5`**. 대상 환경: **Minecraft 26.2 / Java 25 / Paper 26.2 / Fabric Loader 0.19.5+ / Fabric API 0.161.0+26.2**. wire protocol은 v4이며, 현재 서버와 클라이언트 플러그인은 1.0.5로 함께 교체하세요.
+Maven 좌표: **`tmin.click:skm-api:1.0.5`**. 대상 환경: **Minecraft 26.2 / Java 25 / Paper 26.2 / Fabric Loader 0.19.5+ / Fabric API 0.161.0+26.2**. wire protocol은 v4입니다. 서버 플러그인은 1.0.5를 유지하고 클라이언트는 1.0.6으로 업데이트하세요.
 
 ## 빌드
 
@@ -27,12 +27,12 @@ export PATH="$JAVA_HOME/bin:$PATH"
 ```text
 skm-api/build/libs/skm-api-1.0.5.jar
 paper-plugin/build/libs/SKM-Server-1.0.5.jar
-fabric-client/build/libs/skm-client-26.2-1.0.5.jar
+fabric-client/build/libs/skm-client-26.2-1.0.6.jar
 ```
 
 ## 다른 Paper 플러그인에서 의존성으로 받기
 
-현재 API artifact는 Maven Central에 자동 게시되어 있지 않습니다. 로컬 개발 시 프로젝트에서 한 번 설치하세요.
+API 1.0.5는 GitHub Packages에 게시되어 있습니다. GitHub Maven 저장소 접근 설정은 [API 연동·배포 가이드](docs/API.md)를 참고하세요. 오프라인/로컬 개발 시에는 프로젝트에서 한 번 설치할 수 있습니다.
 
 ```bash
 ./gradlew :skm-api:publishToMavenLocal
@@ -57,7 +57,7 @@ dependencies {
 ## 설치와 업그레이드
 
 1. 서버를 종료하고 기존 구버전 서버 플러그인을 `plugins/`에서 제거한 뒤 `SKM-Server-1.0.5.jar`를 설치합니다.
-2. 클라이언트의 `mods/`에서 구버전 클라이언트 JAR을 제거하고 `skm-client-26.2-1.0.5.jar`를 설치합니다. 기존 JAR과 새 JAR을 함께 두지 마세요.
+2. 클라이언트의 `mods/`에서 구버전 클라이언트 JAR을 제거하고 `skm-client-26.2-1.0.6.jar`를 설치합니다. 기존 JAR과 새 JAR을 함께 두지 마세요.
 3. 서버를 시작합니다. 이전 버전 데이터 폴더의 `config.yml`, `actions.yml`은 `plugins/SKM/`로 자동 복사됩니다. 새 위치에 파일이 이미 있으면 덮어쓰지 않습니다.
 4. 기존 서버별 캐시와 키 설정은 사용할 때 `.minecraft/config/skm/`로 자동 복사됩니다. 원본 파일은 삭제하지 않습니다.
 5. Fabric 클라이언트로 접속해 Paper 콘솔에서 `Received SKM hello`, `Sending N SKM action(s) ... ids: ...`를 확인합니다.
@@ -95,7 +95,7 @@ Paper의 YAML path 처리로 ID가 중첩 section처럼 보이더라도 SKM은 `
 
 ## 키 설정과 서버 전환
 
-- 서버 접속 시 해당 signature의 action만 Controls에 표시되고, 카테고리는 **정렬 우선순위 1번**으로 고정됩니다.
+- 서버 접속 시 해당 signature의 action만 Controls에 표시되고, 카테고리는 **정렬 우선순위 1번**으로 고정됩니다. 카테고리 제목에는 `SKM ·` 접두어 없이 서버 signature만 표시됩니다.
 - action 표시명은 서버 설정의 `name`을 사용합니다.
 - 연결 해제나 서버 전환 시 이전 서버 키를 즉시 숨기고 등록에서 제거합니다. 다음 서버의 액션만 표시합니다.
 - 키 변경값은 클라이언트에만 저장됩니다. 서버로 전송되지 않습니다.

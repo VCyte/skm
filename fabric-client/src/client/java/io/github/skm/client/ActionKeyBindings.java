@@ -192,7 +192,7 @@ public final class ActionKeyBindings {
         DYNAMIC_TRANSLATIONS.clear();
         ACTIONS.forEach((id, action) -> DYNAMIC_TRANSLATIONS.put(mappingName(activeSignature, id), action.name()));
         if (!activeSignature.isEmpty()) {
-        DYNAMIC_TRANSLATIONS.put("key.category.skm.actions", "SKM · " + activeSignature);
+            DYNAMIC_TRANSLATIONS.put("key.category.skm.actions", activeSignature);
         }
     }
 

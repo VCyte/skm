@@ -21,7 +21,7 @@ Paper 서버 JAR과 별도로 각 플레이어 PC에 Fabric API와 SKM Fabric cl
 
 1. 서버 A `actions.yml`에 action 3개, 서버 B에는 action 1개를 준비합니다. 슬롯 필드를 넣지 않습니다.
 2. `max-actions`가 최소 등록 개수 이상인지 확인합니다.
-3. 서버 A에 접속해 `설정 → 조작`을 엽니다. SKM 카테고리가 키 목록의 맨 위에 있고, 서버 A의 세 action 이름이 각각 한 키로 보여야 합니다.
+3. 서버 A에 접속해 `설정 → 조작`을 엽니다. 서버 signature만 제목으로 표시되는 카테고리가 키 목록의 맨 위에 있고, 서버 A의 세 action 이름이 각각 한 키로 보여야 합니다.
 4. 키 하나를 플레이어가 직접 바꾸고 세 키 모두 입력되는지 확인합니다.
 5. 액션 목록을 3개에서 2개로 수정하고 `/skm reload` 또는 감시 갱신을 기다립니다. revision 변경 sync 뒤 삭제된 키가 사라져야 합니다.
 6. 액션을 0개로 둔 경우 SKM key mapping이 하나도 노출되지 않아야 합니다.
@@ -66,7 +66,7 @@ Paper 서버 JAR과 별도로 각 플레이어 PC에 Fabric API와 SKM Fabric cl
 
 - [ ] `./gradlew clean build`가 Java 25에서 성공
 - [ ] Paper와 Fabric의 protocol version이 모두 4
-- [ ] SKM key category가 Controls sort order 맨 앞에 표시
+- [ ] 서버 signature만 제목으로 표시하는 key category가 Controls sort order 맨 앞에 표시
 - [ ] Hello 및 server-to-client payload가 raw JSON bytes이고 length prefix 없음
 - [ ] Paper 설정의 `server-signature` 및 `max-actions` 검증
 - [ ] 액션 수와 Controls 키 개수가 정확히 일치
