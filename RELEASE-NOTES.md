@@ -1,5 +1,14 @@
 # SKM 릴리스 노트
 
+## 1.1.0 — Minecraft 26.2 입력 수정 및 통합 버전 정리
+
+- 모든 모듈과 소비 예제의 버전을 1.1.0으로 통일했습니다. Maven 좌표는 `tmin.click:skm-api:1.1.0`입니다.
+- GitHub Release 게시 후 Actions workflow가 API 1.1.0을 GitHub Packages로 배포하도록 구성했습니다.
+- Minecraft 26.2에서 실제 활성 화면을 `Minecraft.gui.screen()`으로 확인하도록 변경했습니다. 오래된 화면 추적 상태가 입력을 막던 문제를 해결합니다.
+- 서버 권위 쿨다운은 그대로 유지하면서 `cooldown` 피드백의 `[SKM] 스킬 쿨다운` 오버레이 표시는 제거했습니다.
+- 키 입력 진단용 반복 로그는 정식 배포 소스에서 제거했습니다.
+- Paper 26.2 / Java 25 / Minecraft 26.2 / Fabric Loader 0.19.5+ / Fabric API 0.161.0+26.2, Protocol v4.
+
 ## 1.0.6 — Fabric 클라이언트 표시 수정
 
 - Minecraft `설정 → 조작`에서 서버별 SKM 카테고리 이름의 `SKM ·` 접두어를 제거했습니다. 예: `skm-main`.
