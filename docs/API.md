@@ -7,7 +7,7 @@ SKM API는 별도 Paper 플러그인이 SKM 입력을 받도록 공개한 Java A
 ```text
 group:    tmin.click
 artifact: skm-api
-version:  1.0.5
+version:  1.1.0
 ```
 
 주요 API 타입은 `io.github.skm.api` 패키지에 있습니다.
@@ -29,12 +29,12 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'tmin.click:skm-api:1.0.5'
+    compileOnly 'tmin.click:skm-api:1.1.0'
     compileOnly 'io.papermc.paper:paper-api:26.2.build.124-stable'
 }
 ```
 
-서버에 `SKM-Server-1.0.5.jar`도 설치해야 합니다. 소비 플러그인의 `plugin.yml`에 로드 의존성을 넣어 SKM API 클래스를 런타임에 사용할 수 있게 합니다.
+서버에 `SKM-Server-1.1.0.jar`도 설치해야 합니다. 소비 플러그인의 `plugin.yml`에 로드 의존성을 넣어 SKM API 클래스를 런타임에 사용할 수 있게 합니다.
 
 ```yaml
 name: MyGameSkills
@@ -86,25 +86,26 @@ public final class MyGameSkills extends JavaPlugin implements ActionExecutionSer
 ./gradlew :skm-api:publishToMavenLocal
 ```
 
-이 명령은 API를 현재 PC의 `~/.m2/repository/tmin/click/skm-api/1.0.5/`에 설치합니다. `mavenLocal()`을 선언한 다른 프로젝트에서 사용할 수 있지만, 다른 개발자나 CI 서버에 자동으로 공유되지는 않습니다.
+이 명령은 API를 현재 PC의 `~/.m2/repository/tmin/click/skm-api/1.1.0/`에 설치합니다. `mavenLocal()`을 선언한 다른 프로젝트에서 사용할 수 있지만, 다른 개발자나 CI 서버에 자동으로 공유되지는 않습니다.
 
-## GitHub에 소스 저장소 올리기
+## GitHub 소스 저장소 업데이트
 
-현재 작업 폴더는 아직 Git 저장소가 아니며 GitHub 원격 주소도 설정되어 있지 않습니다. GitHub에서 새 저장소를 만들고, 아래 명령에서 `OWNER/REPOSITORY`를 실제 값으로 바꿔 프로젝트 루트에서 실행하세요. `.gitignore`가 Gradle 캐시·로컬 도구·배포 산출물을 제외합니다.
+소스는 `https://github.com/VCyte/skm` Git 저장소에서 관리합니다. clone한 작업 폴더에서 변경사항을 검토한 뒤 feature/release 브랜치로 commit하고 push하세요. `.gitignore`가 Gradle 캐시·로컬 도구·배포 산출물을 제외합니다.
 
 ```bash
-git init -b main
+git clone https://github.com/VCyte/skm.git
+cd skm
+git switch -c release/1.1.0
 git add .
-git commit -m "Initial SKM 1.0.5 source"
-git remote add origin https://github.com/OWNER/REPOSITORY.git
-git push -u origin main
+git commit -m "Prepare SKM 1.1.0"
+git push -u origin release/1.1.0
 ```
 
 저장소를 공개로 만들지는 사용자가 선택해야 합니다. 저장소 생성 후에는 GitHub 웹 화면에서 저장소 이름과 공개/비공개 설정을 확인하세요.
 
 ## GitHub Packages에 Maven 의존성 게시
 
-소스 push만으로 Maven artifact가 배포되지는 않습니다. GitHub 저장소를 만든 다음, GitHub Packages에 쓰기 권한이 있는 **Personal Access Token (classic)** 을 생성하고 `write:packages` 권한을 줍니다. 비공개 저장소를 쓰는 경우 GitHub가 안내하는 repository 접근 권한도 설정하세요. 토큰은 채팅이나 저장소에 넣지 말고 터미널 환경 변수 또는 GitHub Actions secrets로 전달합니다. GitHub Packages의 Gradle 문서도 classic PAT를 요구합니다.[3]
+GitHub Release가 게시되면 `.github/workflows/publish-api.yml` workflow가 `GITHUB_TOKEN`과 `packages: write` 권한으로 API를 GitHub Packages에 게시합니다. Actions 안에서 이 저장소에 연결된 package를 게시할 때 별도 PAT가 필요하지 않습니다. 로컬에서 직접 게시하려면 GitHub Packages 쓰기 권한이 있는 **Personal Access Token (classic)** 이 필요합니다. 토큰은 채팅이나 저장소에 넣지 말고 터미널 환경 변수로 전달하세요.[3]
 
 ```bash
 export SKM_MAVEN_URL="https://maven.pkg.github.com/OWNER/REPOSITORY"
@@ -113,7 +114,7 @@ read -s SKM_MAVEN_PASSWORD; export SKM_MAVEN_PASSWORD
 ./gradlew :skm-api:publish
 ```
 
-명령이 끝나면 GitHub 저장소의 **Packages**에서 `tmin.click:skm-api:1.0.5`가 게시됐는지 확인하고 필요하면 package visibility를 Public으로 바꾸세요. 소비 플러그인은 저장소와 의존성을 선언합니다.
+Release workflow가 성공한 뒤 GitHub 저장소의 **Packages**에서 `tmin.click:skm-api:1.1.0`이 생성됐는지 확인하고 필요하면 package visibility를 Public으로 바꾸세요. 소비 플러그인은 저장소와 의존성을 선언합니다.
 
 ```groovy
 repositories {
@@ -126,7 +127,7 @@ repositories {
     }
 }
 dependencies {
-    compileOnly "tmin.click:skm-api:1.0.5"
+    compileOnly "tmin.click:skm-api:1.1.0"
 }
 ```
 
