@@ -1,0 +1,11 @@
+# Must be unique for each backend server when using Velocity/BungeeCord.
+# Client key bindings and cached action lists are isolated by this exact signature.
+# Valid: lowercase letters, digits, '.', '_' and '-'.
+server-signature: skm-main
+
+# Maximum number of dynamically created action key bindings sent to each client (1-256).
+max-actions: 128
+
+# Checks actions.yml metadata every five seconds by default. Invalid edits keep the last valid snapshot.
+watch-actions-file: true
+watch-interval-ticks: 100

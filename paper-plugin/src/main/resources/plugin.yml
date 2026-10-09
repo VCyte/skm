@@ -1,0 +1,18 @@
+name: SKM
+version: '${version}'
+main: io.github.skm.server.SKMPlugin
+api-version: '26.2'
+description: SKM (Server Key Mapping) server plugin for Minecraft 26.2.
+author: SKM Contributors
+commands:
+  skm:
+    description: Inspect or reload the SKM server key mapping registry.
+    usage: /skm <status|reload>
+    permission: skm.use
+permissions:
+  skm.use:
+    description: Allows bridge status commands.
+    default: true
+  skm.admin:
+    description: Allows reloading actions.yml.
+    default: op

@@ -1,0 +1,18 @@
+# Server-owned actions. Each action ID receives its own client key binding.
+# Client bindings and overrides are stored locally under config/skm/servers/<signature>.json.
+actions:
+  skill.test:
+    name: "테스트 스킬"
+    default-key: "key.keyboard.z"
+    cooldown-ms: 1000
+    category: "test"
+    holdable: false
+    # permission: "game.skill.test"
+    # required-level: 0
+
+  skill.sprint:
+    name: "질주"
+    default-key: "key.keyboard.x"
+    cooldown-ms: 250
+    category: "movement"
+    holdable: true

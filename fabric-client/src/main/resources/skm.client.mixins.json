@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "io.github.skm.client.mixin",
+  "client": [
+    "OptionsAccessor",
+    "KeyMappingAccessor",
+    "KeyMappingCategoryAccessor",
+    "ClientLanguageMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

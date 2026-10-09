@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "skm",
+  "version": "${version}",
+  "name": "SKM — Server Key Mapping",
+  "description": "Server-synchronized dynamic key mappings for Minecraft.",
+  "authors": ["SKM Contributors"],
+  "license": "MIT",
+  "environment": "client",
+  "mixins": [
+    "skm.client.mixins.json"
+  ],
+  "entrypoints": {
+    "client": [
+      "io.github.skm.client.SKMClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "~26.2",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}

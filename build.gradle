@@ -1,0 +1,9 @@
+plugins {
+    id 'com.gradleup.shadow' version '9.1.0' apply false
+    id 'net.fabricmc.fabric-loom' version '1.16.3' apply false
+}
+
+allprojects {
+    group = 'tmin.click'
+    version = '1.0.5'
+}

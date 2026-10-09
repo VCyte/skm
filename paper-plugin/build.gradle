@@ -1,0 +1,46 @@
+plugins {
+    id 'java-library'
+    id 'com.gradleup.shadow'
+}
+
+base {
+    archivesName = 'SKM-Server'
+}
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://repo.papermc.io/repository/maven-public/' }
+}
+
+dependencies {
+    implementation project(':skm-api')
+    compileOnly 'io.papermc.paper:paper-api:26.2.build.124-stable'
+    implementation 'com.google.code.gson:gson:2.13.2'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+    withSourcesJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 25
+    options.encoding = 'UTF-8'
+}
+
+tasks.named('processResources') {
+    filesMatching('plugin.yml') {
+        expand(version: project.version)
+    }
+}
+
+tasks.named('shadowJar') {
+    archiveClassifier = ''
+    relocate 'com.google.gson', 'io.github.skm.libs.gson'
+}
+
+tasks.named('build') {
+    dependsOn tasks.named('shadowJar')
+}

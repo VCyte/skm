@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "signature": "skm-dungeon",
+  "keyOverrides": {
+    "skill.fireball": "key.keyboard.q",
+    "skill.dash": "key.mouse.4"
+  }
+}

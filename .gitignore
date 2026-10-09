@@ -1,0 +1,7 @@
+.gradle/
+**/build/
+build/maven-repo/
+dist/
+.tooling/
+run/
+*.log

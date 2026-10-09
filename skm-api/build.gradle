@@ -1,0 +1,67 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
+base {
+    archivesName = 'skm-api'
+}
+
+repositories {
+    maven { url = 'https://repo.papermc.io/repository/maven-public/' }
+}
+
+dependencies {
+    compileOnly 'io.papermc.paper:paper-api:26.2.build.124-stable'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+    withSourcesJar()
+    withJavadocJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 25
+    options.encoding = 'UTF-8'
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            artifactId = 'skm-api'
+            pom {
+                name = 'SKM Paper API'
+                description = 'Public Paper API for integrating server plugins with SKM.'
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = 'skmRemote'
+            def configuredUrl = providers.gradleProperty('skmMavenUrl')
+                    .orElse(providers.environmentVariable('SKM_MAVEN_URL'))
+                    .orElse(rootProject.layout.buildDirectory.dir('maven-repo').get().asFile.toURI().toString())
+            url = uri(configuredUrl.get())
+            def repoUsername = providers.gradleProperty('skmMavenUsername')
+                    .orElse(providers.environmentVariable('SKM_MAVEN_USERNAME')).orNull
+            def repoPassword = providers.gradleProperty('skmMavenPassword')
+                    .orElse(providers.environmentVariable('SKM_MAVEN_PASSWORD')).orNull
+            if (repoUsername != null && repoPassword != null) {
+                credentials {
+                    username = repoUsername
+                    password = repoPassword
+                }
+            }
+        }
+    }
+}
