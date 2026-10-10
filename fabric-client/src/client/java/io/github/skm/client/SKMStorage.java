@@ -12,7 +12,7 @@ final class SKMStorage {
     private SKMStorage() { }
 
     static Path file(String area, String signature) {
-        String safe = signature.matches("[a-z0-9][a-z0-9._-]{0,63}") ? signature : "invalid";
+        String safe = signature != null && signature.matches("[a-z0-9][a-z0-9._-]{0,63}") ? signature : "invalid";
         Path config = FabricLoader.getInstance().getConfigDir();
         Path current = config.resolve("skm").resolve(area).resolve(safe + ".json");
         Path legacy = config.resolve("rpgbridge").resolve(area).resolve(safe + ".json");

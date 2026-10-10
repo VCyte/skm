@@ -13,6 +13,7 @@ import java.util.Map;
 
 /** Local key overrides are stored per server signature and never accepted from the network. */
 final class ServerKeyConfig {
+    private static final long MAX_CONFIG_BYTES = 64 * 1024;
     private String signature = "";
     private final Map<String, String> overrides = new HashMap<>();
 
@@ -23,6 +24,7 @@ final class ServerKeyConfig {
         Path file = fileFor(nextSignature);
         if (!Files.isRegularFile(file)) return;
         try {
+            if (Files.size(file) > MAX_CONFIG_BYTES) return;
             JsonObject root = JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8)).getAsJsonObject();
             if (ProtocolJson.integer(root, "schemaVersion", 0, 1, 1) != 1) return;
             if (!nextSignature.equals(ProtocolJson.string(root, "signature", 64))) return;

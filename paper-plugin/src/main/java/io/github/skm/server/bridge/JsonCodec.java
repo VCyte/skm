@@ -9,11 +9,14 @@ import java.util.Optional;
 
 /** Strict bounded JSON parsing for untrusted plugin-message bytes. */
 public final class JsonCodec {
+    private static final int MAX_NESTING_DEPTH = 32;
+
     private JsonCodec() {
     }
 
     public static Optional<JsonObject> parseObject(byte[] bytes) {
-        if (bytes == null || bytes.length == 0 || bytes.length > Protocol.MAX_PAYLOAD_BYTES) {
+        if (bytes == null || bytes.length == 0 || bytes.length > Protocol.MAX_PAYLOAD_BYTES
+                || !hasSafeNesting(bytes)) {
             return Optional.empty();
         }
         try {
@@ -22,6 +25,33 @@ public final class JsonCodec {
         } catch (RuntimeException ignored) {
             return Optional.empty();
         }
+    }
+
+    private static boolean hasSafeNesting(byte[] bytes) {
+        int depth = 0;
+        boolean inString = false;
+        boolean escaped = false;
+        for (byte value : bytes) {
+            int current = value & 0xff;
+            if (inString) {
+                if (escaped) {
+                    escaped = false;
+                } else if (current == '\\') {
+                    escaped = true;
+                } else if (current == '"') {
+                    inString = false;
+                }
+                continue;
+            }
+            if (current == '"') {
+                inString = true;
+            } else if (current == '{' || current == '[') {
+                if (++depth > MAX_NESTING_DEPTH) return false;
+            } else if (current == '}' || current == ']') {
+                if (--depth < 0) return false;
+            }
+        }
+        return !inString && depth == 0;
     }
 
     public static byte[] encode(JsonObject object) {

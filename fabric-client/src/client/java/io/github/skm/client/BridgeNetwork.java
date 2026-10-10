@@ -5,23 +5,38 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.client.Minecraft;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
-/** Client trusts only the action list from the current server signature and sends action ID + intent. */
+/** Client treats every server-supplied packet as untrusted and sends only action ID + input intent. */
 public final class BridgeNetwork {
     private static final int CLIENT_PROTOCOL = 4;
     private static final int MAX_ACTIONS = 256;
+    private static final String REVISION_PATTERN = "[a-f0-9]{16}";
+
     private final ActionCache cache;
     private final FeedbackState feedback;
+    private final ConnectionSignatureGuard signatureGuard = new ConnectionSignatureGuard();
+    // High burst allowances preserve existing v4 plugins that register actions during onEnable;
+    // sustained traffic is bounded, and the current Paper implementation coalesces updates per tick.
+    private final PacketRateLimiter handshakeLimit = new PacketRateLimiter(256, 32.0);
+    private final PacketRateLimiter syncLimit = new PacketRateLimiter(128, 24.0);
+    private final PacketRateLimiter feedbackLimit = new PacketRateLimiter(128, 64.0);
+    private final AtomicBoolean rateLimitWarningShown = new AtomicBoolean();
+
     private boolean active;
     private String signature = "";
     private String revision = "";
+    private String appliedRevision = "";
     private int maxActions = 128;
     private boolean awaitingHandshake;
+    private boolean signatureMismatchWarningShown;
     private int helloTicks;
     private int helloAttempts;
 
@@ -32,11 +47,22 @@ public final class BridgeNetwork {
 
     void registerReceivers() {
         ClientPlayNetworking.registerGlobalReceiver(BridgePayloads.Handshake.TYPE, (payload, context) ->
-                ProtocolJson.parse(payload.data()).ifPresent(json -> context.client().execute(() -> handleHandshake(json))));
+                receive(payload.data(), handshakeLimit, context.client(), this::handleHandshake));
         ClientPlayNetworking.registerGlobalReceiver(BridgePayloads.Sync.TYPE, (payload, context) ->
-                ProtocolJson.parse(payload.data()).ifPresent(json -> context.client().execute(() -> handleSync(json))));
+                receive(payload.data(), syncLimit, context.client(), this::handleSync));
         ClientPlayNetworking.registerGlobalReceiver(BridgePayloads.Feedback.TYPE, (payload, context) ->
-                ProtocolJson.parse(payload.data()).ifPresent(json -> context.client().execute(() -> feedback.accept(json))));
+                receive(payload.data(), feedbackLimit, context.client(), feedback::accept));
+    }
+
+    private void receive(byte[] data, PacketRateLimiter limiter, Minecraft client,
+                         Consumer<JsonObject> handler) {
+        if (!limiter.tryAcquire()) {
+            if (rateLimitWarningShown.compareAndSet(false, true)) {
+                SKMClient.LOGGER.warn("Excessive SKM server packets; limiting further protocol work for this connection.");
+            }
+            return;
+        }
+        ProtocolJson.parse(data).ifPresent(json -> client.execute(() -> handler.accept(json)));
     }
 
     void registerLifecycle() {
@@ -73,6 +99,13 @@ public final class BridgeNetwork {
         ActionKeyBindings.clearServerActions();
         signature = "";
         revision = "";
+        appliedRevision = "";
+        signatureGuard.reset();
+        signatureMismatchWarningShown = false;
+        rateLimitWarningShown.set(false);
+        handshakeLimit.reset();
+        syncLimit.reset();
+        feedbackLimit.reset();
         feedback.clear();
         awaitingHandshake = true;
         helloAttempts = 0;
@@ -96,32 +129,57 @@ public final class BridgeNetwork {
     }
 
     private void handleHandshake(JsonObject payload) {
+        if (!awaitingHandshake && !active) return;
+
         int serverProtocol = ProtocolJson.integer(payload, "protocol", 0, 0, 10_000);
         int minimumClient = ProtocolJson.integer(payload, "minClient", Integer.MAX_VALUE, 1, 10_000);
         String nextSignature = ProtocolJson.string(payload, "signature", 64);
         String nextRevision = ProtocolJson.string(payload, "revision", 64);
         int nextMaxActions = ProtocolJson.integer(payload, "maxActions", 0, 1, MAX_ACTIONS);
-        if (nextSignature == null || nextRevision == null || !nextSignature.matches("[a-z0-9][a-z0-9._-]{0,63}")
-                || CLIENT_PROTOCOL < minimumClient || serverProtocol != CLIENT_PROTOCOL || nextMaxActions == 0) {
-            disconnect();
+        boolean valid = nextSignature != null && nextRevision != null && nextRevision.matches(REVISION_PATTERN)
+                && serverProtocol == CLIENT_PROTOCOL && CLIENT_PROTOCOL >= minimumClient && nextMaxActions > 0;
+        if (!valid) {
+            // A bad update after a valid handshake must not let another plugin disable the live session.
+            if (awaitingHandshake && !active) disconnect();
             return;
         }
-        awaitingHandshake = false;
-        SKMClient.LOGGER.info("Received SKM handshake from signature '{}' (protocol {}, revision {}).", nextSignature, serverProtocol, nextRevision);
-        if (!signature.equals(nextSignature)) {
-            active = false;
-            ActionKeyBindings.clearServerActions();
+
+        if (!signatureGuard.bindOrMatch(nextSignature)) {
+            if (!signatureMismatchWarningShown) {
+                signatureMismatchWarningShown = true;
+                SKMClient.LOGGER.warn("Rejected an SKM server-signature change during one connection; the first valid signature remains active.");
+            }
+            return;
         }
+
+        boolean initialHandshake = !active;
+        if (!initialHandshake && revision.equals(nextRevision) && maxActions == nextMaxActions) return;
+        if (!initialHandshake && !awaitingHandshake && !signature.equals(nextSignature)) return;
+
+        boolean revisionChanged = !revision.equals(nextRevision) || maxActions != nextMaxActions;
+        if (revisionChanged) appliedRevision = "";
+        awaitingHandshake = false;
         signature = nextSignature;
         revision = nextRevision;
         maxActions = nextMaxActions;
         active = true;
+
+        if (initialHandshake) {
+            SKMClient.LOGGER.info("Received SKM handshake from signature '{}' (protocol {}, revision {}).", nextSignature, serverProtocol, nextRevision);
+        } else {
+            SKMClient.LOGGER.debug("Accepted SKM action-list revision update for '{}'.", nextSignature);
+        }
+
         if (cache.matches(signature, revision) && cache.actions().size() <= maxActions) {
             ActionKeyBindings.apply(signature, cache.actions());
-            sendAck("cache-hit");
+            appliedRevision = revision;
+            if (initialHandshake) sendAck("cache-hit");
         } else {
             ActionKeyBindings.clearServerActions();
-            sendAck("sync-request");
+            appliedRevision = "";
+            // Initial handshakes need a client request. Revision updates are sent with a sync
+            // immediately after the handshake, so requesting again would duplicate the full snapshot.
+            if (initialHandshake) sendAck("sync-request");
         }
     }
 
@@ -130,8 +188,9 @@ public final class BridgeNetwork {
         String receivedRevision = ProtocolJson.string(payload, "revision", 64);
         int receivedMaxActions = ProtocolJson.integer(payload, "maxActions", 0, 1, MAX_ACTIONS);
         JsonArray array = payload.has("actions") && payload.get("actions").isJsonArray() ? payload.getAsJsonArray("actions") : null;
-        if (!revision.equals(receivedRevision) || receivedMaxActions == 0 || receivedMaxActions > maxActions
-                || array == null || array.size() > receivedMaxActions) return;
+        if (receivedRevision == null || !receivedRevision.matches(REVISION_PATTERN)
+                || !revision.equals(receivedRevision) || receivedMaxActions == 0 || receivedMaxActions > maxActions
+                || array == null || array.size() > receivedMaxActions || revision.equals(appliedRevision)) return;
 
         List<ClientAction> actions = new ArrayList<>();
         Set<String> ids = new HashSet<>();
@@ -143,6 +202,7 @@ public final class BridgeNetwork {
         }
         ActionKeyBindings.apply(signature, actions);
         cache.update(signature, revision, actions);
+        appliedRevision = revision;
         SKMClient.LOGGER.info("Synchronized {} SKM action(s) from server '{}'.", actions.size(), signature);
     }
 
@@ -163,6 +223,13 @@ public final class BridgeNetwork {
         helloAttempts = 0;
         signature = "";
         revision = "";
+        appliedRevision = "";
+        signatureGuard.reset();
+        signatureMismatchWarningShown = false;
+        rateLimitWarningShown.set(false);
+        handshakeLimit.reset();
+        syncLimit.reset();
+        feedbackLimit.reset();
         ActionKeyBindings.clearServerActions();
         feedback.clear();
     }

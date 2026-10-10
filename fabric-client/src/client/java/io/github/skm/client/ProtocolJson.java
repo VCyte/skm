@@ -12,7 +12,8 @@ final class ProtocolJson {
     }
 
     static Optional<JsonObject> parse(byte[] bytes) {
-        if (bytes == null || bytes.length == 0 || bytes.length > BridgePayloads.MAX_PAYLOAD_BYTES) {
+        if (bytes == null || bytes.length == 0 || bytes.length > BridgePayloads.MAX_PAYLOAD_BYTES
+                || !JsonNestingGuard.isSafe(bytes)) {
             return Optional.empty();
         }
         try {

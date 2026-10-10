@@ -81,7 +81,7 @@ public final class MyGameSkills extends JavaPlugin implements ActionExecutionSer
 
 ## 런타임 액션 등록·해제
 
-`ActionRegistrationService`는 SKM이 Bukkit Services에 등록하는 서비스입니다. `depend: [SKM]`을 지정한 소비 플러그인은 `onEnable()`에서 서비스 핸들을 받아 액션 메타데이터와 자신의 실행기를 함께 등록합니다. SKM은 액션 목록 revision을 갱신하고 접속 중인 호환 클라이언트에 즉시 새 목록을 보내므로, 해당 키 바인딩이 Controls에 나타납니다. `unregister()` 또는 `unregisterAll()`을 호출하면 클라이언트 목록에서 제거됩니다.
+`ActionRegistrationService`는 SKM이 Bukkit Services에 등록하는 서비스입니다. `depend: [SKM]`을 지정한 소비 플러그인은 `onEnable()`에서 서비스 핸들을 받아 액션 메타데이터와 자신의 실행기를 함께 등록합니다. SKM은 액션 목록 revision을 갱신하고 접속 중인 호환 클라이언트에 다음 서버 tick에서 최신 목록을 보냅니다. 같은 tick에 여러 액션을 등록·해제하면 마지막 스냅샷 하나로 합쳐 전송하므로 플러그인 API 호출 자체에 별도 빈도 제한을 두지 않습니다. `unregister()` 또는 `unregisterAll()`을 호출하면 클라이언트 목록에서 제거됩니다.
 
 ```java
 import io.github.skm.api.ActionDefinition;

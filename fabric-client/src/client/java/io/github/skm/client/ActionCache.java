@@ -11,17 +11,27 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-/** Server action caches are isolated by the exact server signature. */
+/** Server action snapshots are disposable and bounded; player key overrides are stored separately. */
 public final class ActionCache {
     private static final int MAX_ACTIONS = 256;
+    private static final String SIGNATURE_PATTERN = "[a-z0-9][a-z0-9._-]{0,63}";
+    private static final String REVISION_PATTERN = "[a-f0-9]{16}";
+    private static final long MIN_WRITE_INTERVAL_NANOS = 1_000_000_000L;
+
     private String signature = "";
     private String revision = "";
     private List<ClientAction> actions = List.of();
+    private final LinkedHashMap<String, Long> persistedWrites = new LinkedHashMap<>(16, 0.75f, true);
 
     public boolean matches(String requestedSignature, String requestedRevision) {
+        if (!validSignature(requestedSignature) || requestedRevision == null
+                || !requestedRevision.matches(REVISION_PATTERN)) return false;
         load(requestedSignature);
         return signature.equals(requestedSignature) && revision.equals(requestedRevision);
     }
@@ -29,10 +39,27 @@ public final class ActionCache {
     public List<ClientAction> actions() { return actions; }
 
     public void update(String signature, String revision, List<ClientAction> actions) {
+        if (!validSignature(signature) || revision == null || !revision.matches(REVISION_PATTERN)
+                || actions == null || actions.size() > MAX_ACTIONS || actions.stream().anyMatch(java.util.Objects::isNull)) {
+            return;
+        }
         this.signature = signature;
         this.revision = revision;
         this.actions = List.copyOf(actions);
-        save();
+
+        long now = System.nanoTime();
+        Long previousWrite = persistedWrites.get(signature);
+        if (previousWrite != null && now - previousWrite < MIN_WRITE_INTERVAL_NANOS) {
+            return; // The live list is applied; a missed cache write only causes a later re-sync.
+        }
+        if (save()) {
+            persistedWrites.put(signature, now);
+            if (persistedWrites.size() > CacheFilePruner.MAX_CACHE_FILES) {
+                Iterator<Map.Entry<String, Long>> iterator = persistedWrites.entrySet().iterator();
+                iterator.next();
+                iterator.remove();
+            }
+        }
     }
 
     private void load(String nextSignature) {
@@ -43,21 +70,30 @@ public final class ActionCache {
         Path file = fileFor(nextSignature);
         if (!Files.isRegularFile(file)) return;
         try {
+            long size = Files.size(file);
+            if (size <= 0 || size > BridgePayloads.MAX_PAYLOAD_BYTES) {
+                Files.deleteIfExists(file);
+                return;
+            }
             JsonObject root = JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8)).getAsJsonObject();
-            if (!nextSignature.equals(ProtocolJson.string(root, "signature", 64))) return;
+            if (ProtocolJson.integer(root, "schemaVersion", 0, 2, 2) != 2
+                    || !nextSignature.equals(ProtocolJson.string(root, "signature", 64))) return;
             String cachedRevision = ProtocolJson.string(root, "revision", 64);
-            if (cachedRevision == null) return;
-            List<ClientAction> parsed = parseActions(root.getAsJsonArray("actions"));
+            if (cachedRevision == null || !cachedRevision.matches(REVISION_PATTERN)) return;
+            JsonElement actionElement = root.get("actions");
+            if (actionElement == null || !actionElement.isJsonArray()) return;
+            List<ClientAction> parsed = parseActions(actionElement.getAsJsonArray());
             if (parsed == null) return;
             revision = cachedRevision;
             actions = List.copyOf(parsed);
-        } catch (RuntimeException | IOException ignored) {
+            CacheFilePruner.touch(file);
+        } catch (RuntimeException | IOException exception) {
             // Corrupt cache is disposable; the next handshake requests an authoritative sync.
         }
     }
 
-    private void save() {
-        if (signature.isEmpty()) return;
+    private boolean save() {
+        if (!validSignature(signature) || !revision.matches(REVISION_PATTERN)) return false;
         JsonObject root = new JsonObject();
         root.addProperty("schemaVersion", 2);
         root.addProperty("signature", signature);
@@ -65,18 +101,23 @@ public final class ActionCache {
         JsonArray array = new JsonArray();
         actions.forEach(action -> array.add(action.toJson()));
         root.add("actions", array);
+        byte[] bytes = root.toString().getBytes(StandardCharsets.UTF_8);
+        if (bytes.length == 0 || bytes.length > BridgePayloads.MAX_PAYLOAD_BYTES) return false;
         try {
             Path file = fileFor(signature);
             Files.createDirectories(file.getParent());
             Path temporary = file.resolveSibling(file.getFileName() + ".tmp");
-            Files.writeString(temporary, root.toString(), StandardCharsets.UTF_8);
+            Files.write(temporary, bytes);
             try {
                 Files.move(temporary, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException atomicMoveUnavailable) {
                 Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING);
             }
-        } catch (IOException exception) {
+            CacheFilePruner.prune(file.getParent(), file);
+            return true;
+        } catch (IOException | SecurityException exception) {
             SKMClient.LOGGER.warn("Could not save SKM action cache", exception);
+            return false;
         }
     }
 
@@ -91,6 +132,10 @@ public final class ActionCache {
             parsed.add(action);
         }
         return parsed;
+    }
+
+    private static boolean validSignature(String value) {
+        return value != null && value.matches(SIGNATURE_PATTERN);
     }
 
     private static Path fileFor(String signature) {

@@ -112,6 +112,8 @@ Paper의 YAML path 처리로 ID가 중첩 section처럼 보이더라도 SKM은 `
 
 Fabric mod ID, key ID, payload 채널 namespace는 `skm`이며 wire protocol은 v4입니다. v4 미만 서버/클라이언트와 통신하지 않으므로 양쪽 JAR을 함께 교체해야 합니다. 클라이언트는 action ID와 `press`/`release` 의도만 보냅니다. 권한, 레벨, 쿨다운, 실행은 서버가 검증합니다. 기본 실행 서비스는 안전한 no-op입니다. 소비 플러그인은 `ActionRegistrationService`에 액션과 실행 핸들러를 등록해 사용 중 필요에 따라 키 매핑을 추가·제거할 수 있습니다.
 
+**보안 참고:** `server-signature`는 클라이언트의 서버별 키 설정을 구분하는 레이블이지, 서버의 암호학적 신원을 증명하는 서명이 아닙니다. 서버에서 온 메시지는 신뢰할 수 없는 입력으로 처리됩니다. 한 연결 안에서는 첫 유효 signature만 유지하고, 과도한 패킷·중첩 JSON·액션 캐시 증가를 제한합니다. 재생성 가능한 액션 캐시만 정리하며 플레이어가 직접 지정한 키 설정은 보존합니다. 세부 제한과 프로토콜 동작은 [프로토콜 v4 명세](docs/PROTOCOL.md)를 참고하세요.
+
 - [Paper API 소비 및 Maven 업로드 가이드](docs/API.md)
 - [프로토콜 v4 명세](docs/PROTOCOL.md)
 - [운영·서버 전환 가이드](docs/OPERATIONS.md)

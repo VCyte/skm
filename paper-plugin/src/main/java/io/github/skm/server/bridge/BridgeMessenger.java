@@ -18,6 +18,7 @@ public final class BridgeMessenger implements PluginMessageListener {
     private final ActionRegistry registry;
     private final Map<UUID, ClientSession> sessions = new HashMap<>();
     private ActionRouter router;
+    private boolean updateScheduled;
 
     public BridgeMessenger(io.github.skm.server.SKMPlugin plugin, ActionRegistry registry) {
         this.plugin = plugin;
@@ -86,6 +87,16 @@ public final class BridgeMessenger implements PluginMessageListener {
     }
 
     public void broadcastUpdate() {
+        if (updateScheduled) return;
+        updateScheduled = true;
+        plugin.getServer().getScheduler().runTask(plugin, () -> {
+            updateScheduled = false;
+            if (!plugin.isEnabled()) return;
+            broadcastLatestSnapshot();
+        });
+    }
+
+    private void broadcastLatestSnapshot() {
         for (Player player : plugin.getServer().getOnlinePlayers()) {
             if (sessions.containsKey(player.getUniqueId())) {
                 sendHandshake(player);

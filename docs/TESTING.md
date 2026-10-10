@@ -54,6 +54,14 @@ Paper 서버 JAR과 별도로 각 플레이어 PC에 Fabric API와 SKM Fabric cl
 | 구성된 최대치 초과 | 설정/registry 적용 거부, 마지막 정상 목록 유지 |
 | 256 action 하드 상한 | 256 이하만 가능; 128 KiB 초과 payload는 거부 |
 
+## 비정상 서버 메시지 방어
+
+- 한 연결에서 유효한 handshake를 받은 뒤 다른 `signature`를 여러 번 보내도 첫 signature의 키 목록과 설정이 유지되어야 하며 새 signature별 cache 파일이 생성되지 않아야 합니다.
+- `skm:handshake`, `skm:sync`, `skm:feedback`을 허용 burst 이상으로 보내면 처리량이 제한되고, 이후 정상 재접속은 새 rate budget으로 처리되어야 합니다.
+- 32단계보다 깊은 중첩 JSON, 잘못된 revision 형식, oversized payload는 무시되어야 하며 클라이언트가 crash하지 않아야 합니다.
+- sync에 성공한 서버가 129개 이상이어도 재생성 가능한 action cache 파일은 최대 128개로 정리됩니다. 사용자 키 override 파일은 그대로 남아야 합니다.
+- 같은 tick에 여러 액션을 등록·해제하면 최신 목록 하나만 전송되어야 합니다. `ActionRegistrationService` 등록 자체는 기존 전체 `max-actions` 범위에서 동작해야 합니다.
+
 ## 서버 권위 검사
 
 - 권한이 없는 플레이어의 키 입력에서 실행 서비스가 호출되지 않아야 합니다.
