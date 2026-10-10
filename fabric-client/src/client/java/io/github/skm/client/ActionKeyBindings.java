@@ -133,10 +133,17 @@ public final class ActionKeyBindings {
                 }
                 HELD.put(id, down);
             } else {
+                boolean clicked = binding.consumeClick();
                 while (binding.consumeClick()) {
+                    // Drain repeat/queued click events; a non-holdable action fires once per press.
+                }
+                boolean down = binding.isDown();
+                boolean wasDown = HELD.getOrDefault(id, false);
+                if (clicked && !wasDown) {
                     network.sendInput(id, "press");
                     feedback.predict(action);
                 }
+                HELD.put(id, down);
             }
         }
     }
@@ -144,7 +151,8 @@ public final class ActionKeyBindings {
     private static void releaseAll() {
         if (network != null && network.isActive()) {
             for (Map.Entry<String, Boolean> entry : HELD.entrySet()) {
-                if (entry.getValue() && ACTIONS.containsKey(entry.getKey())) {
+                ClientAction action = ACTIONS.get(entry.getKey());
+                if (entry.getValue() && action != null && action.holdable()) {
                     network.sendInput(entry.getKey(), "release");
                 }
             }
