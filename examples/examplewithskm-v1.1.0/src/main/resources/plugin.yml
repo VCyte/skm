@@ -1,0 +1,6 @@
+name: ExampleWithSKM
+version: '${version}'
+main: tmin.click.skm.example.ExampleWithSKMPlugin
+api-version: '26.2'
+depend: [SKM]
+description: Demonstrates the SKM 1.1.0 ActionExecutionService API.

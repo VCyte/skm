@@ -1,0 +1,71 @@
+plugins {
+    id 'java'
+}
+
+group = 'tmin.click.examples'
+def standalone = rootProject == project
+def defaultSkmVersion = standalone ? '1.2.0' : rootProject.version.toString()
+def skmVersion = providers.gradleProperty('skmVersion').getOrElse(defaultSkmVersion)
+if (standalone) {
+    version = skmVersion
+}
+
+base {
+    archivesName = 'examplewithskm'
+}
+
+repositories {
+    mavenLocal()
+
+    // Published artifact: https://github.com/VCyte/skm/packages
+    maven {
+        name = 'githubPackages'
+        url = uri('https://maven.pkg.github.com/vcyte/skm')
+
+        def githubUser = providers.gradleProperty('gpr.user')
+                .orElse(providers.environmentVariable('GITHUB_ACTOR')).orNull
+        // Local/external builds need a classic PAT with read:packages in gpr.key.
+        // GITHUB_TOKEN works in Actions only when that workflow repository can read the package.
+        def githubToken = providers.gradleProperty('gpr.key')
+                .orElse(providers.environmentVariable('GITHUB_TOKEN')).orNull
+        if (githubUser != null && githubToken != null) {
+            credentials {
+                username = githubUser
+                password = githubToken
+            }
+        }
+    }
+
+    maven { url = uri('https://repo.papermc.io/repository/maven-public/') }
+}
+
+dependencies {
+    if (standalone) {
+        compileOnly "tmin.click:skm-api:${skmVersion}"
+    } else {
+        compileOnly project(':skm-api')
+    }
+    compileOnly 'io.papermc.paper:paper-api:26.2.build.124-stable'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 25
+    options.encoding = 'UTF-8'
+}
+
+tasks.named('jar') {
+    archiveFileName = 'examplewithskm.jar'
+}
+
+tasks.processResources {
+    inputs.property('version', skmVersion)
+    filesMatching('plugin.yml') {
+        expand(version: skmVersion)
+    }
+}

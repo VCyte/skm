@@ -120,6 +120,8 @@ public final class MySkills extends JavaPlugin implements ActionExecutionService
 
 `register`와 `unregister`는 서버 메인 스레드에서 호출해야 합니다. 액션 ID는 `actions.yml` 또는 다른 플러그인의 런타임 등록과 겹치면 안 됩니다. 중복 ID나 `max-actions` 한도 초과는 `IllegalArgumentException`을 발생시킵니다. 등록한 `owner` 플러그인이 비활성화될 때도 SKM이 해당 플러그인의 모든 액션을 자동 제거하고 클라이언트 목록을 갱신합니다. 액션 ID가 제거 후 다시 등록되면 기존 플레이어의 키 설정은 동일 ID를 기준으로 복원됩니다.
 
+전체 build 설정, `plugin.yml`, 명령으로 액션을 런타임 추가·제거하는 예제는 [`examples/examplewithskm`](../examples/examplewithskm/README.md)을 참고하세요. 릴리스 태그를 게시하면 같은 태그의 API에 맞춰 예제 JAR과 소스 ZIP을 빌드해 릴리스에 첨부합니다.
+
 ## 로컬 Maven 저장소에 설치
 
 저장소가 아직 없을 때 가장 간단한 개발 방법입니다. 프로젝트 루트에서:

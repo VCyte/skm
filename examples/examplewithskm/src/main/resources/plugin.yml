@@ -1,0 +1,15 @@
+name: ExampleWithSKM
+version: '${version}'
+main: io.github.skm.examplewithskm.ExampleWithSKMPlugin
+api-version: '26.2'
+depend: [SKM]
+description: Demonstrates plugin-owned runtime SKM key bindings.
+commands:
+  examplewithskm:
+    description: Add or remove the ExampleWithSKM runtime key.
+    usage: /examplewithskm <add|remove>
+    permission: examplewithskm.manage
+permissions:
+  examplewithskm.manage:
+    description: Allows adding and removing the ExampleWithSKM key.
+    default: op

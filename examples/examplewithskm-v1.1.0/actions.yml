@@ -1,0 +1,7 @@
+actions:
+  examplewithskm.ping:
+    name: "ExampleWithSKM Ping"
+    default-key: "key.keyboard.j"
+    cooldown-ms: 750
+    category: "ExampleWithSKM"
+    holdable: false

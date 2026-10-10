@@ -1,0 +1,68 @@
+name: Build ExampleWithSKM and attach release assets
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-attach:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out the released tag
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
+
+      - name: Build the API-matched example plugin
+        run: ./gradlew --no-daemon :examplewithskm:clean :examplewithskm:build
+
+      - name: Package version-matched source
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          version="${RELEASE_TAG#v}"
+          mkdir -p "$RUNNER_TEMP/release-assets"
+          git archive --format=zip \
+            --prefix="examplewithskm-source-${version}/" \
+            HEAD examples/examplewithskm \
+            > "$RUNNER_TEMP/release-assets/examplewithskm-source-${version}.zip"
+          cp examples/examplewithskm/build/libs/examplewithskm.jar "$RUNNER_TEMP/release-assets/examplewithskm.jar"
+
+      - name: Upload example JAR and source ZIP
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          gh release upload "$RELEASE_TAG" \
+            "$RUNNER_TEMP/release-assets/examplewithskm.jar" \
+            "$RUNNER_TEMP/release-assets/examplewithskm-source-${RELEASE_TAG#v}.zip" \
+            --repo "$REPOSITORY" --clobber
+
+      - name: Rebuild SHA256SUMS for all release JAR and ZIP assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          asset_dir="$RUNNER_TEMP/all-release-assets"
+          mkdir -p "$asset_dir"
+          gh release download "$RELEASE_TAG" --repo "$REPOSITORY" \
+            --pattern '*.jar' --pattern '*.zip' --dir "$asset_dir" --clobber
+          cd "$asset_dir"
+          sha256sum -- *.jar *.zip > SHA256SUMS
+          gh release upload "$RELEASE_TAG" SHA256SUMS --repo "$REPOSITORY" --clobber
