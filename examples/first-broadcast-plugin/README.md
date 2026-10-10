@@ -27,7 +27,7 @@ gpr.user=YOUR_GITHUB_USERNAME
 gpr.key=YOUR_CLASSIC_PAT_WITH_READ_PACKAGES
 ```
 
-또는 `GITHUB_ACTOR`와 `GITHUB_TOKEN`/`GH_TOKEN` 환경 변수를 사용할 수 있습니다. API JAR을 같은 PC의 Maven 로컬 저장소에 `publishToMavenLocal`로 설치한 경우에는 별도 인증 없이 `mavenLocal()`에서 받습니다.
+GitHub의 Apache Maven registry는 **공개된 패키지도 다운로드할 때 인증을 요구**하므로, 로컬 빌드나 일반적인 외부 CI에서는 `read:packages` 권한을 가진 **classic PAT**를 사용하세요. `GITHUB_ACTOR`와 `GITHUB_TOKEN`은 소비 플러그인의 GitHub Actions 저장소에 해당 패키지 읽기 권한이 부여된 경우에만 사용할 수 있습니다. `GH_TOKEN` 환경 변수는 GitHub CLI용 토큰일 수 있어 Maven registry 인증에 사용할 수 없습니다. API JAR을 같은 PC의 Maven 로컬 저장소에 `publishToMavenLocal`로 설치한 경우에는 별도 인증 없이 `mavenLocal()`에서 받습니다.
 
 ## 서버 설정
 

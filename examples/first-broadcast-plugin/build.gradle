@@ -19,9 +19,10 @@ repositories {
 
         def githubUser = providers.gradleProperty('gpr.user')
                 .orElse(providers.environmentVariable('GITHUB_ACTOR')).orNull
+        // Local/external builds need a classic PAT with read:packages in gpr.key.
+        // GITHUB_TOKEN works in Actions only when that workflow repository can read the package.
         def githubToken = providers.gradleProperty('gpr.key')
-                .orElse(providers.environmentVariable('GITHUB_TOKEN'))
-                .orElse(providers.environmentVariable('GH_TOKEN')).orNull
+                .orElse(providers.environmentVariable('GITHUB_TOKEN')).orNull
         if (githubUser != null && githubToken != null) {
             credentials {
                 username = githubUser

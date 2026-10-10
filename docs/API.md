@@ -114,7 +114,7 @@ read -s SKM_MAVEN_PASSWORD; export SKM_MAVEN_PASSWORD
 ./gradlew :skm-api:publish
 ```
 
-Release workflow가 성공한 뒤 GitHub 저장소의 **Packages**에서 `tmin.click:skm-api:1.1.0`이 생성됐는지 확인하고 필요하면 package visibility를 Public으로 바꾸세요. 소비 플러그인은 저장소와 의존성을 선언합니다.
+Release workflow가 성공하면 `tmin.click:skm-api:1.1.0`이 GitHub Packages에 게시됩니다. Apache Maven registry는 repository-scoped이므로 패키지의 접근 범위는 연결된 저장소를 따릅니다. `VCyte/skm`은 이미 공개 저장소이며 Maven 패키지만 따로 공개/비공개로 바꾸는 설정은 지원되지 않습니다. 다만 GitHub Maven registry는 **공개 패키지도 다운로드 시 인증을 요구**합니다. 외부 소비자는 `read:packages` 권한의 Personal Access Token (classic)을 Gradle 인증값으로 사용하세요. GitHub Actions의 `GITHUB_TOKEN`은 소비 workflow가 있는 저장소에 해당 패키지의 읽기 권한이 허용된 경우에만 사용할 수 있습니다.[3]
 
 ```groovy
 repositories {
@@ -131,7 +131,7 @@ dependencies {
 }
 ```
 
-다른 개발자가 GitHub Packages에서 받으려면 패키지 접근 권한이 있어야 하고 `read:packages` 토큰을 설정해야 할 수 있습니다.[3] 모두가 인증 없이 `mavenCentral()`만으로 받도록 하려면 Maven Central에 게시해야 합니다.
+외부 프로젝트의 로컬 빌드와 CI에서는 `gpr.user` 및 `gpr.key`를 설정하고, `gpr.key`에 `read:packages` 권한이 있는 classic PAT를 넣으세요. 토큰은 프로젝트 파일이나 Git 저장소에 커밋하지 마세요. `mavenLocal()`로 개발 PC에 API를 설치한 경우에는 GitHub 인증이 필요하지 않습니다. GitHub Packages의 Maven 레지스트리는 공개 패키지에도 인증을 요구합니다.[3]
 
 ## Maven Central에 게시하려는 경우
 
@@ -143,7 +143,7 @@ Maven Central은 `tmin.click`이라는 좌표를 자동으로 받아주지 않�
 
 [1]: https://central.sonatype.org/register/namespace/ "Maven Central namespace registration and domain verification"
 [2]: https://central.sonatype.org/publish/requirements/ "Maven Central publishing requirements"
-[3]: https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry "GitHub Packages Gradle registry"
+[3]: https://docs.github.com/packages/working-with-a-github-packages-registry/working-with-the-apache-maven-registry "GitHub Packages Apache Maven registry"
 
 ## 버전 올리기
 
