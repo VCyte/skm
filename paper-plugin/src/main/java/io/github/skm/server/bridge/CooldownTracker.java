@@ -24,4 +24,9 @@ public final class CooldownTracker {
     public void remove(UUID playerId) {
         untilByPlayer.remove(playerId);
     }
+
+    public void removeAction(String actionId) {
+        untilByPlayer.values().forEach(cooldowns -> cooldowns.remove(actionId));
+        untilByPlayer.values().removeIf(Map::isEmpty);
+    }
 }

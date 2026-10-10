@@ -5,6 +5,7 @@ import io.github.skm.api.*;
 import io.github.skm.server.bridge.ActionFileWatcher;
 import io.github.skm.server.bridge.ActionRateLimiter;
 import io.github.skm.server.bridge.ActionRegistry;
+import io.github.skm.server.bridge.ActionRegistrationServiceImpl;
 import io.github.skm.server.bridge.ActionRouter;
 import io.github.skm.server.bridge.BridgeMessenger;
 import io.github.skm.server.bridge.CooldownTracker;
@@ -15,6 +16,7 @@ import io.github.skm.server.command.SKMCommand;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -27,6 +29,7 @@ public final class SKMPlugin extends JavaPlugin implements Listener {
     private ActionRegistry registry;
     private BridgeMessenger messenger;
     private ActionRouter router;
+    private ActionRegistrationServiceImpl actionRegistrationService;
     private ActionFileWatcher watcher;
     private String serverSignature;
     private int maxActions;
@@ -50,13 +53,17 @@ public final class SKMPlugin extends JavaPlugin implements Listener {
         registry.reload();
 
         messenger = new BridgeMessenger(this, registry);
-        router = new ActionRouter(this, registry, new CooldownTracker(), new ActionRateLimiter(), messenger);
+        CooldownTracker cooldowns = new CooldownTracker();
+        ActionRateLimiter rateLimiter = new ActionRateLimiter();
+        router = new ActionRouter(this, registry, cooldowns, rateLimiter, messenger);
         messenger.setRouter(router);
         messenger.register();
 
         getServer().getPluginManager().registerEvents(this, this);
         getServer().getServicesManager().register(ActionExecutionService.class, new DefaultActionExecutionService(), this, ServicePriority.Lowest);
         getServer().getServicesManager().register(LevelRequirementService.class, new DefaultLevelRequirementService(), this, ServicePriority.Lowest);
+        actionRegistrationService = new ActionRegistrationServiceImpl(registry, messenger, cooldowns, rateLimiter);
+        getServer().getServicesManager().register(ActionRegistrationService.class, actionRegistrationService, this, ServicePriority.Normal);
         SKMCommand command = new SKMCommand(this);
         Objects.requireNonNull(getCommand("skm"), "command missing from plugin.yml").setExecutor(command);
         Objects.requireNonNull(getCommand("skm"), "command missing from plugin.yml").setTabCompleter(command);
@@ -72,6 +79,10 @@ public final class SKMPlugin extends JavaPlugin implements Listener {
     @Override
     public void onDisable() {
         if (watcher != null) watcher.stop();
+        if (actionRegistrationService != null) {
+            actionRegistrationService.unregisterAll(this);
+            getServer().getServicesManager().unregister(ActionRegistrationService.class, actionRegistrationService);
+        }
         if (messenger != null) messenger.unregister();
     }
 
@@ -97,6 +108,16 @@ public final class SKMPlugin extends JavaPlugin implements Listener {
     public void onQuit(PlayerQuitEvent event) {
         if (messenger != null) messenger.remove(event.getPlayer());
         if (router != null) router.remove(event.getPlayer());
+    }
+
+    @EventHandler
+    public void onPluginDisable(PluginDisableEvent event) {
+        if (actionRegistrationService == null || event.getPlugin() == this) return;
+        int removed = actionRegistrationService.unregisterAll(event.getPlugin());
+        if (removed > 0) {
+            getLogger().info("Removed " + removed + " runtime action(s) owned by disabled plugin "
+                    + event.getPlugin().getName() + ".");
+        }
     }
 
     public void reloadActionsAndBroadcast(String source) {

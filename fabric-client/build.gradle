@@ -7,7 +7,7 @@ base {
     archivesName = 'skm-client-26.2'
 }
 
-version = '1.1.0'
+version = '1.2.0'
 
 loom {
     splitEnvironmentSourceSets()

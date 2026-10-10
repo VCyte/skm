@@ -65,7 +65,8 @@ public final class ActionRouter {
             return;
         }
 
-        ActionResult result = executionService().execute(player, action, state);
+        ActionExecutionService handler = registry.handlerFor(actionId).orElseGet(this::executionService);
+        ActionResult result = handler.execute(player, action, state);
         if (result == ActionResult.SUCCESS && state == ActionExecutionService.InputState.PRESS) {
             cooldowns.start(player.getUniqueId(), actionId, action.cooldownMillis(), now);
         }

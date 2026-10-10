@@ -3,6 +3,8 @@ package io.github.skm.server.bridge;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import io.github.skm.api.ActionDefinition;
+import io.github.skm.api.ActionExecutionService;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -13,9 +15,11 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Locale;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.LinkedHashSet;
 import java.util.TreeMap;
 
 /** Atomically replaces the action snapshot only after the complete YAML file validates. */
@@ -23,6 +27,8 @@ public final class ActionRegistry {
     private volatile Snapshot snapshot = new Snapshot("bootstrap", Map.of());
     private final File actionsFile;
     private final int maxActions;
+    private Map<String, ActionDefinition> fileActions = Map.of();
+    private Map<String, RuntimeAction> runtimeActions = new LinkedHashMap<>();
     private static final Set<String> ACTION_FIELDS = Set.of(
             "name", "default-key", "cooldown-ms", "category", "holdable", "permission", "required-level"
     );
@@ -43,17 +49,74 @@ public final class ActionRegistry {
             collectActions(root, "", next);
         }
 
-        String revision = fingerprint(next.values());
+        Snapshot candidate = buildSnapshot(next, runtimeActions);
+        boolean changed = !candidate.revision().equals(snapshot.revision());
+        fileActions = Map.copyOf(next);
+        snapshot = candidate;
+        return changed;
+    }
+
+    public synchronized void register(Plugin owner, ActionDefinition action, ActionExecutionService handler) {
+        if (fileActions.containsKey(action.id()) || runtimeActions.containsKey(action.id())) {
+            throw new IllegalArgumentException("action id is already registered: " + action.id());
+        }
+        Map<String, RuntimeAction> nextRuntimeActions = new LinkedHashMap<>(runtimeActions);
+        nextRuntimeActions.put(action.id(), new RuntimeAction(owner, action, handler));
+        Snapshot candidate = buildSnapshot(fileActions, nextRuntimeActions);
+        runtimeActions = nextRuntimeActions;
+        snapshot = candidate;
+    }
+
+    public synchronized boolean unregister(Plugin owner, String actionId) {
+        RuntimeAction current = runtimeActions.get(actionId);
+        if (current == null || current.owner() != owner) return false;
+        Map<String, RuntimeAction> nextRuntimeActions = new LinkedHashMap<>(runtimeActions);
+        nextRuntimeActions.remove(actionId);
+        snapshot = buildSnapshot(fileActions, nextRuntimeActions);
+        runtimeActions = nextRuntimeActions;
+        return true;
+    }
+
+    public synchronized Set<String> unregisterAll(Plugin owner) {
+        Map<String, RuntimeAction> nextRuntimeActions = new LinkedHashMap<>(runtimeActions);
+        Set<String> removed = new LinkedHashSet<>();
+        nextRuntimeActions.entrySet().removeIf(entry -> {
+            if (entry.getValue().owner() != owner) return false;
+            removed.add(entry.getKey());
+            return true;
+        });
+        if (!removed.isEmpty()) {
+            snapshot = buildSnapshot(fileActions, nextRuntimeActions);
+            runtimeActions = nextRuntimeActions;
+        }
+        return removed;
+    }
+
+    public Optional<ActionExecutionService> handlerFor(String id) {
+        RuntimeAction action = runtimeActions.get(id);
+        return action == null ? Optional.empty() : Optional.of(action.handler());
+    }
+
+    private Snapshot buildSnapshot(Map<String, ActionDefinition> configured,
+                                   Map<String, RuntimeAction> dynamic) {
+        Map<String, ActionDefinition> combined = new TreeMap<>(configured);
+        dynamic.forEach((id, action) -> {
+            if (combined.putIfAbsent(id, action.definition()) != null) {
+                throw new IllegalArgumentException("duplicate action id: " + id);
+            }
+        });
+        if (combined.size() > maxActions) {
+            throw new IllegalArgumentException("action count exceeds configured max-actions " + maxActions);
+        }
+        String revision = fingerprint(combined.values());
         JsonObject syncPreview = new JsonObject();
         syncPreview.addProperty("revision", revision);
         syncPreview.addProperty("maxActions", maxActions);
         JsonArray previewActions = new JsonArray();
-        next.values().forEach(action -> previewActions.add(ActionJsonCodec.toSyncJson(action)));
+        combined.values().forEach(action -> previewActions.add(ActionJsonCodec.toSyncJson(action)));
         syncPreview.add("actions", previewActions);
-        JsonCodec.encode(syncPreview); // Reject oversized YAML before replacing the last valid snapshot.
-        boolean changed = !revision.equals(snapshot.revision());
-        snapshot = new Snapshot(revision, Map.copyOf(next));
-        return changed;
+        JsonCodec.encode(syncPreview); // Reject oversized snapshots before replacing the last valid state.
+        return new Snapshot(revision, Map.copyOf(combined));
     }
 
     public Optional<ActionDefinition> find(String id) {
@@ -135,5 +198,8 @@ public final class ActionRegistry {
     }
 
     private record Snapshot(String revision, Map<String, ActionDefinition> actions) {
+    }
+
+    private record RuntimeAction(Plugin owner, ActionDefinition definition, ActionExecutionService handler) {
     }
 }

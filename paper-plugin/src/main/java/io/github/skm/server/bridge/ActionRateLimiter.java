@@ -28,4 +28,9 @@ public final class ActionRateLimiter {
     public void remove(UUID playerId) {
         samples.remove(playerId);
     }
+
+    public void removeAction(String actionId) {
+        samples.values().forEach(actions -> actions.remove(actionId));
+        samples.values().removeIf(Map::isEmpty);
+    }
 }

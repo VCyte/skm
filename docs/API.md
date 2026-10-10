@@ -7,18 +7,19 @@ SKM API는 별도 Paper 플러그인이 SKM 입력을 받도록 공개한 Java A
 ```text
 group:    tmin.click
 artifact: skm-api
-version:  1.1.0
+version:  1.2.0
 ```
 
 주요 API 타입은 `io.github.skm.api` 패키지에 있습니다.
 
 - `ActionExecutionService`: 검증이 끝난 `press` / `release` 입력을 실제 서버 기능에 연결
+- `ActionRegistrationService`: 액션을 런타임에 플레이어 키 목록으로 추가·제거하고 해당 액션 실행기를 지정
 - `ActionDefinition`: action ID, 표시 이름, 기본 키, 쿨다운 등 서버 메타데이터
 - `ActionResult`: `SUCCESS`, `NO_RESOURCE`, `INVALID_TARGET`, `DENIED`
 - `LevelRequirementService`: 외부 레벨/진행도 시스템 연동
 - `PlayerActionEvent`: 실행 서비스 호출 직전에 발생하는 cancellable Bukkit 이벤트
 
-`ActionExecutionService`는 Bukkit Services 방식의 단일 실행 제공자입니다. 여러 플러그인이 동시에 각자 실행을 처리하려면 하나의 제공자가 action ID별로 위임하세요. 여러 플러그인이 수신만 하면 되는 경우 `PlayerActionEvent` listener를 쓰면 됩니다.
+`actions.yml`에 선언한 고정 액션은 Bukkit Services의 `ActionExecutionService` 제공자로 처리할 수 있습니다. 플러그인별 런타임 액션은 `ActionRegistrationService` 등록 시 전달한 실행기로 각각 라우팅되므로, 여러 소비 플러그인이 별도 ID를 소유해도 하나의 글로벌 실행기를 나눠 쓸 필요가 없습니다. 관찰만 할 플러그인은 `PlayerActionEvent` listener를 사용할 수 있습니다.
 
 ## 소비 플러그인에서 의존성 선언
 
@@ -29,12 +30,12 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'tmin.click:skm-api:1.1.0'
+    compileOnly 'tmin.click:skm-api:1.2.0'
     compileOnly 'io.papermc.paper:paper-api:26.2.build.124-stable'
 }
 ```
 
-서버에 `SKM-Server-1.1.0.jar`도 설치해야 합니다. 소비 플러그인의 `plugin.yml`에 로드 의존성을 넣어 SKM API 클래스를 런타임에 사용할 수 있게 합니다.
+서버에 `SKM-Server-1.2.0.jar`도 설치해야 합니다. 소비 플러그인의 `plugin.yml`에 로드 의존성을 넣어 SKM API 클래스를 런타임에 사용할 수 있게 합니다.
 
 ```yaml
 name: MyGameSkills
@@ -76,7 +77,48 @@ public final class MyGameSkills extends JavaPlugin implements ActionExecutionSer
 }
 ```
 
-액션 ID `skill.fireball`은 서버의 `plugins/SKM/actions.yml`에도 등록해야 하며, 해당 액션 입력은 위 서비스로 전달됩니다. 실제 효과와 게임 규칙은 소비 플러그인이 담당합니다.
+액션 ID `skill.fireball`은 고정 액션 예시이므로 서버의 `plugins/SKM/actions.yml`에도 등록해야 합니다. 플러그인이 원하는 시점에 키를 추가·제거하려면 아래 런타임 API를 사용하세요. 실제 효과와 게임 규칙은 소비 플러그인이 담당합니다.
+
+## 런타임 액션 등록·해제
+
+`ActionRegistrationService`는 SKM이 Bukkit Services에 등록하는 서비스입니다. `depend: [SKM]`을 지정한 소비 플러그인은 `onEnable()`에서 서비스 핸들을 받아 액션 메타데이터와 자신의 실행기를 함께 등록합니다. SKM은 액션 목록 revision을 갱신하고 접속 중인 호환 클라이언트에 즉시 새 목록을 보내므로, 해당 키 바인딩이 Controls에 나타납니다. `unregister()` 또는 `unregisterAll()`을 호출하면 클라이언트 목록에서 제거됩니다.
+
+```java
+import io.github.skm.api.ActionDefinition;
+import io.github.skm.api.ActionExecutionService;
+import io.github.skm.api.ActionRegistrationService;
+import io.github.skm.api.ActionResult;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
+
+public final class MySkills extends JavaPlugin implements ActionExecutionService {
+    private ActionRegistrationService actions;
+
+    @Override
+    public void onEnable() {
+        actions = getServer().getServicesManager().load(ActionRegistrationService.class);
+        if (actions == null) throw new IllegalStateException("SKM is not available");
+        actions.register(this, new ActionDefinition(
+            "mymod.dash", "대시", "key.keyboard.g", 500, "mymod", false, null, 0
+        ), this);
+    }
+
+    @Override
+    public void onDisable() {
+        if (actions != null) actions.unregisterAll(this);
+    }
+
+    @Override
+    public ActionResult execute(Player player, ActionDefinition action, InputState state) {
+        if ("mymod.dash".equals(action.id()) && state == InputState.PRESS) {
+            // 서버에서 게임 조건을 검증하고 대시 효과를 적용합니다.
+        }
+        return ActionResult.SUCCESS;
+    }
+}
+```
+
+`register`와 `unregister`는 서버 메인 스레드에서 호출해야 합니다. 액션 ID는 `actions.yml` 또는 다른 플러그인의 런타임 등록과 겹치면 안 됩니다. 중복 ID나 `max-actions` 한도 초과는 `IllegalArgumentException`을 발생시킵니다. 등록한 `owner` 플러그인이 비활성화될 때도 SKM이 해당 플러그인의 모든 액션을 자동 제거하고 클라이언트 목록을 갱신합니다. 액션 ID가 제거 후 다시 등록되면 기존 플레이어의 키 설정은 동일 ID를 기준으로 복원됩니다.
 
 ## 로컬 Maven 저장소에 설치
 
@@ -86,7 +128,7 @@ public final class MyGameSkills extends JavaPlugin implements ActionExecutionSer
 ./gradlew :skm-api:publishToMavenLocal
 ```
 
-이 명령은 API를 현재 PC의 `~/.m2/repository/tmin/click/skm-api/1.1.0/`에 설치합니다. `mavenLocal()`을 선언한 다른 프로젝트에서 사용할 수 있지만, 다른 개발자나 CI 서버에 자동으로 공유되지는 않습니다.
+이 명령은 API를 현재 PC의 `~/.m2/repository/tmin/click/skm-api/1.2.0/`에 설치합니다. `mavenLocal()`을 선언한 다른 프로젝트에서 사용할 수 있지만, 다른 개발자나 CI 서버에 자동으로 공유되지는 않습니다.
 
 ## GitHub 소스 저장소 업데이트
 
@@ -95,10 +137,10 @@ public final class MyGameSkills extends JavaPlugin implements ActionExecutionSer
 ```bash
 git clone https://github.com/VCyte/skm.git
 cd skm
-git switch -c release/1.1.0
+git switch -c release/1.2.0
 git add .
-git commit -m "Prepare SKM 1.1.0"
-git push -u origin release/1.1.0
+git commit -m "Prepare SKM 1.2.0"
+git push -u origin release/1.2.0
 ```
 
 저장소를 공개로 만들지는 사용자가 선택해야 합니다. 저장소 생성 후에는 GitHub 웹 화면에서 저장소 이름과 공개/비공개 설정을 확인하세요.
@@ -114,7 +156,7 @@ read -s SKM_MAVEN_PASSWORD; export SKM_MAVEN_PASSWORD
 ./gradlew :skm-api:publish
 ```
 
-Release workflow가 성공하면 `tmin.click:skm-api:1.1.0`이 GitHub Packages에 게시됩니다. Apache Maven registry는 repository-scoped이므로 패키지의 접근 범위는 연결된 저장소를 따릅니다. `VCyte/skm`은 이미 공개 저장소이며 Maven 패키지만 따로 공개/비공개로 바꾸는 설정은 지원되지 않습니다. 다만 GitHub Maven registry는 **공개 패키지도 다운로드 시 인증을 요구**합니다. 외부 소비자는 `read:packages` 권한의 Personal Access Token (classic)을 Gradle 인증값으로 사용하세요. GitHub Actions의 `GITHUB_TOKEN`은 소비 workflow가 있는 저장소에 해당 패키지의 읽기 권한이 허용된 경우에만 사용할 수 있습니다.[3]
+Release workflow가 성공하면 `tmin.click:skm-api:1.2.0`이 GitHub Packages에 게시됩니다. Apache Maven registry는 repository-scoped이므로 패키지의 접근 범위는 연결된 저장소를 따릅니다. `VCyte/skm`은 이미 공개 저장소이며 Maven 패키지만 따로 공개/비공개로 바꾸는 설정은 지원되지 않습니다. 다만 GitHub Maven registry는 **공개 패키지도 다운로드 시 인증을 요구**합니다. 외부 소비자는 `read:packages` 권한의 Personal Access Token (classic)을 Gradle 인증값으로 사용하세요. GitHub Actions의 `GITHUB_TOKEN`은 소비 workflow가 있는 저장소에 해당 패키지의 읽기 권한이 허용된 경우에만 사용할 수 있습니다.[3]
 
 ```groovy
 repositories {
@@ -127,7 +169,7 @@ repositories {
     }
 }
 dependencies {
-    compileOnly "tmin.click:skm-api:1.1.0"
+    compileOnly "tmin.click:skm-api:1.2.0"
 }
 ```
 

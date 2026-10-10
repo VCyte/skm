@@ -4,15 +4,15 @@
 
 > Paper 서버 플러그인만으로는 플레이어 PC의 조작 메뉴를 바꿀 수 없습니다. 각 클라이언트에도 Fabric API와 SKM Fabric 모드가 필요합니다.
 
-## 배포 파일 — SKM 1.1.0
+## 배포 파일 — SKM 1.2.0
 
 | 파일 | 설치 위치 | 역할 |
 |---|---|---|
-| `SKM-Server-1.1.0.jar` | Paper 서버 `plugins/` | 서버별 action 목록, 검증, 실행 서비스 및 API 클래스 |
-| `skm-client-26.2-1.1.0.jar` | Fabric 클라이언트 `mods/` | 동적 키 등록, 서버별 키 설정, 입력 전달 |
-| `skm-api-1.1.0.jar` | 소비 플러그인 compileOnly | 다른 Paper 플러그인이 컴파일할 SKM API |
+| `SKM-Server-1.2.0.jar` | Paper 서버 `plugins/` | 서버별 action 목록, 런타임 등록, 검증 및 API 클래스 |
+| `skm-client-26.2-1.2.0.jar` | Fabric 클라이언트 `mods/` | 서버 제공 키 등록, 서버별 키 설정, 입력 전달 |
+| `skm-api-1.2.0.jar` | 소비 플러그인 compileOnly | 다른 Paper 플러그인이 컴파일할 SKM API |
 
-Maven 좌표: **`tmin.click:skm-api:1.1.0`**. 대상 환경: **Minecraft 26.2 / Java 25 / Paper 26.2 / Fabric Loader 0.19.5+ / Fabric API 0.161.0+26.2**. Wire protocol은 v4입니다. 서버 플러그인과 클라이언트 모드를 모두 1.1.0으로 교체하세요.
+Maven 좌표: **`tmin.click:skm-api:1.2.0`**. 대상 환경: **Minecraft 26.2 / Java 25 / Paper 26.2 / Fabric Loader 0.19.5+ / Fabric API 0.161.0+26.2**. Wire protocol은 v4입니다. 런타임 등록에는 새 API JAR과 서버 플러그인이 필요하며, 기존 v4 클라이언트와도 동작합니다.
 
 ## 빌드
 
@@ -25,14 +25,14 @@ export PATH="$JAVA_HOME/bin:$PATH"
 산출물:
 
 ```text
-skm-api/build/libs/skm-api-1.1.0.jar
-paper-plugin/build/libs/SKM-Server-1.1.0.jar
-fabric-client/build/libs/skm-client-26.2-1.1.0.jar
+skm-api/build/libs/skm-api-1.2.0.jar
+paper-plugin/build/libs/SKM-Server-1.2.0.jar
+fabric-client/build/libs/skm-client-26.2-1.2.0.jar
 ```
 
 ## 다른 Paper 플러그인에서 의존성으로 받기
 
-API의 1.1.0 Maven 좌표는 `tmin.click:skm-api:1.1.0`입니다. GitHub Packages 게시 및 접근 설정은 [API 연동·배포 가이드](docs/API.md)를 참고하세요. 오프라인/로컬 개발 시에는 프로젝트에서 한 번 설치할 수 있습니다.
+API의 1.2.0 Maven 좌표는 `tmin.click:skm-api:1.2.0`입니다. GitHub Packages 게시 및 접근 설정은 [API 연동·배포 가이드](docs/API.md)를 참고하세요. 오프라인/로컬 개발 시에는 프로젝트에서 한 번 설치할 수 있습니다.
 
 ```bash
 ./gradlew :skm-api:publishToMavenLocal
@@ -47,24 +47,24 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'tmin.click:skm-api:1.1.0'
+    compileOnly 'tmin.click:skm-api:1.2.0'
     compileOnly 'io.papermc.paper:paper-api:26.2.build.124-stable'
 }
 ```
 
-서버에는 `SKM-Server`도 설치하고 소비 플러그인의 `plugin.yml`에 `depend: [SKM]`을 넣어야 합니다. 그 다음 `ActionExecutionService` 구현을 Paper Services에 등록하면 검증된 입력을 받을 수 있습니다. API 사용 예와 원격 Maven 업로드 절차는 [API 연동·배포 가이드](docs/API.md)를 참고하세요.
+서버에는 `SKM-Server`도 설치하고 소비 플러그인의 `plugin.yml`에 `depend: [SKM]`을 넣어야 합니다. 소비 플러그인은 `ActionRegistrationService`로 액션을 런타임에 등록·해제하고, 등록 시 지정한 `ActionExecutionService` 구현으로 해당 입력을 처리할 수 있습니다. [API 연동·배포 가이드](docs/API.md)를 참고하세요.
 
 ## 설치와 업그레이드
 
-1. 서버를 종료하고 기존 SKM 서버 플러그인을 `plugins/`에서 제거한 뒤 `SKM-Server-1.1.0.jar`를 설치합니다.
-2. 클라이언트의 `mods/`에서 기존 SKM 클라이언트 JAR을 제거하고 `skm-client-26.2-1.1.0.jar`를 설치합니다. 기존 JAR과 새 JAR을 함께 두지 마세요.
+1. 서버를 종료하고 기존 SKM 서버 플러그인을 `plugins/`에서 제거한 뒤 `SKM-Server-1.2.0.jar`를 설치합니다.
+2. 클라이언트의 `mods/`에서 기존 SKM 클라이언트 JAR을 제거하고 `skm-client-26.2-1.2.0.jar`를 설치합니다. 기존 JAR과 새 JAR을 함께 두지 마세요.
 3. 서버를 시작합니다. 이전 버전 데이터 폴더의 `config.yml`, `actions.yml`은 `plugins/SKM/`로 자동 복사됩니다. 새 위치에 파일이 이미 있으면 덮어쓰지 않습니다.
 4. 기존 서버별 캐시와 키 설정은 사용할 때 `.minecraft/config/skm/`로 자동 복사됩니다. 원본 파일은 삭제하지 않습니다.
 5. Fabric 클라이언트로 접속해 Paper 콘솔에서 `Received SKM hello`, `Sending N SKM action(s) ... ids: ...`를 확인합니다.
 
 ## 서버 액션 설정
 
-서버는 `plugins/SKM/actions.yml`을 읽습니다. 각 항목이 키 매핑 하나가 되며 `skill.test` 같은 점 포함 ID도 지원합니다.
+고정 액션은 `plugins/SKM/actions.yml`에 설정할 수 있습니다. 소비 플러그인이 직접 관리하는 액션은 API의 `ActionRegistrationService`로 런타임 등록하므로 YAML에 추가할 필요가 없습니다. 두 방식 모두 `skill.test` 같은 점 포함 ID를 지원합니다.
 
 ```yaml
 actions:
@@ -107,7 +107,7 @@ Paper의 YAML path 처리로 ID가 중첩 section처럼 보이더라도 SKM은 `
 
 ## 프로토콜과 확장
 
-Fabric mod ID, key ID, payload 채널 namespace는 `skm`이며 wire protocol은 v4입니다. v4 미만 서버/클라이언트와 통신하지 않으므로 양쪽 JAR을 함께 교체해야 합니다. 클라이언트는 action ID와 `press`/`release` 의도만 보냅니다. 권한, 레벨, 쿨다운, 실행은 서버가 검증합니다. 기본 실행 서비스는 안전한 no-op입니다. 실제 게임 효과는 별도 Paper 플러그인이 API의 `ActionExecutionService`를 구현해 담당합니다.
+Fabric mod ID, key ID, payload 채널 namespace는 `skm`이며 wire protocol은 v4입니다. v4 미만 서버/클라이언트와 통신하지 않으므로 양쪽 JAR을 함께 교체해야 합니다. 클라이언트는 action ID와 `press`/`release` 의도만 보냅니다. 권한, 레벨, 쿨다운, 실행은 서버가 검증합니다. 기본 실행 서비스는 안전한 no-op입니다. 소비 플러그인은 `ActionRegistrationService`에 액션과 실행 핸들러를 등록해 사용 중 필요에 따라 키 매핑을 추가·제거할 수 있습니다.
 
 - [Paper API 소비 및 Maven 업로드 가이드](docs/API.md)
 - [프로토콜 v4 명세](docs/PROTOCOL.md)

@@ -44,12 +44,14 @@ actions:
 - 사용하지 않는 action은 YAML에서 삭제하면 됩니다. 유효하지 않은 변경은 마지막 정상 registry를 유지합니다.
 - 저장 즉시 기본 5초 감시 또는 `/skm reload`로 검증되며, 의미 있는 변경은 새 revision으로 sync됩니다.
 
+액션을 소비 플러그인에서 직접 관리하려면 `tmin.click:skm-api:1.2.0`의 `ActionRegistrationService`를 사용합니다. 플러그인이 `onEnable()`에서 `ActionDefinition`과 해당 플러그인의 `ActionExecutionService` handler를 등록하면, SKM은 접속 중인 호환 클라이언트에 키 항목을 즉시 추가합니다. `unregister(owner, id)`로 한 개를 제거하거나 `unregisterAll(owner)`로 플러그인 소유 액션을 모두 제거할 수 있습니다. 플러그인 disable 때도 SKM이 자동 정리합니다. 런타임 등록 액션은 YAML에 중복으로 선언하지 마세요.
+
 ## 플레이어 확인 절차
 
 1. Fabric Loader, Fabric API, SKM Fabric 모드가 있는 26.2 클라이언트로 해당 backend에 접속합니다.
 2. handshake의 signature가 의도한 서버 값인지 확인합니다.
-3. `설정 → 조작`에서 SKM 카테고리가 맨 위에 있고 그 아래 서버 액션 이름들이 나타나는지 확인합니다.
-4. 설정된 key가 입력되고, action cooldown/permission feedback이 돌아오는지 확인합니다.
+3. `설정 → 조작`에서 SKM 카테고리가 맨 위에 있고 그 아래 서버 액션 이름들이 나타나는지 확인합니다. 바인딩이 다른 키와 겹치면 항목이 노란색으로 강조됩니다.
+4. 설정된 key가 입력되고 서버가 action cooldown/permission을 계속 검증하는지 확인합니다. SKM은 사용 불가 안내를 액션바나 채팅으로 띄우지 않습니다.
 5. 서버를 나가거나 다른 backend로 이동합니다. 이전 action 이름들이 Controls 목록에서 사라지고, 새 서버 목록만 보여야 합니다.
 6. 같은 서버에 다시 접속해 앞서 지정한 키가 config에서 복구되는지 확인합니다.
 
@@ -69,7 +71,7 @@ actions:
 
 `permission`은 Paper 권한으로 서버 검증합니다. `required-level > 0` action은 외부 레벨 플러그인이 `LevelRequirementService`를 `ServicePriority.Normal` 이상으로 등록할 때만 통과합니다. 연결되지 않은 상태는 거부됩니다.
 
-실제 효과를 수행할 플러그인은 `ActionExecutionService`를 등록합니다. 기본 구현은 no-op 성공이므로, 이 서비스가 없는 한 서버 상태가 변경되지 않습니다. 효과 플러그인에서 대상·거리·마나·피해를 서버 측으로 다시 계산합니다.
+`actions.yml`에 선언한 고정 액션은 전역 `ActionExecutionService` provider로 처리할 수 있습니다. 런타임 액션은 `ActionRegistrationService.register(owner, definition, handler)`로 전달한 플러그인별 handler로 처리됩니다. 기본 구현은 no-op 성공이므로, 별도 handler가 없는 고정 액션은 서버 상태를 변경하지 않습니다. 효과 플러그인에서 대상·거리·마나·피해를 서버 측으로 다시 계산합니다.
 
 ## 장애 진단
 
@@ -84,7 +86,7 @@ actions:
 | 액션 개수 일부만 표시 | `max-actions`, 서버 액션 수, 서버 콘솔의 payload 크기/설정 검증 로그 |
 | 서버 기본 키가 적용 안 됨 | 플레이어의 per-signature `keyOverrides` 존재 여부; 직접 지정한 키는 기본값보다 우선 |
 | 삭제된 키가 계속 노출됨 | 최신 v4 모드인지 확인. 연결 해제 시 모드는 현재 mappings를 비우고 재접속 때 revision을 재동기화 |
-| 액션은 뜨지만 효과가 없음 | `ActionExecutionService` 등록 여부. 기본은 안전한 no-op |
+| 액션은 뜨지만 효과가 없음 | 고정 액션은 `ActionExecutionService` 등록 여부, 런타임 액션은 등록할 때 올바른 handler를 전달했는지 확인. 기본 실행은 안전한 no-op |
 
 ## 보안 한계
 

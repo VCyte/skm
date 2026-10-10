@@ -1,8 +1,0 @@
-# Add this action under the top-level actions: section in plugins/SKM/actions.yml.
-actions:
-  skill.first:
-    name: "첫 인사"
-    default-key: "key.keyboard.z"
-    cooldown-ms: 1000
-    category: "general"
-    holdable: false

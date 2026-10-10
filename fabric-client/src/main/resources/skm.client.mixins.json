@@ -5,7 +5,8 @@
     "OptionsAccessor",
     "KeyMappingAccessor",
     "KeyMappingCategoryAccessor",
-    "ClientLanguageMixin"
+    "ClientLanguageMixin",
+    "KeyBindsListKeyEntryMixin"
   ],
   "injectors": {
     "defaultRequire": 1
