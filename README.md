@@ -4,16 +4,16 @@
 
 > Paper 서버 플러그인만으로는 플레이어 PC의 조작 메뉴를 바꿀 수 없습니다. 각 클라이언트에도 Fabric API와 SKM Fabric 모드가 필요합니다.
 
-## 배포 파일 — SKM 1.2.0
+## 배포 파일 — SKM 1.2.1
 
 | 파일 | 설치 위치 | 역할 |
 |---|---|---|
-| `skm-server-1.2.0.jar` | Paper 서버 `plugins/` | 서버별 action 목록, 런타임 등록, 검증 및 API 클래스 |
-| `skm-client-1.2.0-26.2-fabric.jar` | Fabric 클라이언트 `mods/` | 서버 제공 키 등록, 서버별 키 설정, 입력 전달 |
-| `skm-api-1.2.0.jar` | 소비 플러그인 compileOnly | 다른 Paper 플러그인이 컴파일할 SKM API |
+| `skm-server-1.2.1.jar` | Paper 서버 `plugins/` | 서버별 action 목록, 런타임 등록, 검증 및 API 클래스 |
+| `skm-client-1.2.1-26.2-fabric.jar` | Fabric 클라이언트 `mods/` | 서버 제공 키 등록, 서버별 키 설정, 입력 전달 |
+| `skm-api-1.2.1.jar` | 소비 플러그인 compileOnly | 다른 Paper 플러그인이 컴파일할 SKM API |
 | `examplewithskm.jar` | Paper 서버 `plugins/` | 런타임 키 추가·제거 및 실행 핸들러 예제 |
 
-Maven 좌표: **`tmin.click:skm-api:1.2.0`**. 대상 환경: **Minecraft 26.2 / Java 25 / Paper 26.2 / Fabric Loader 0.19.5+ / Fabric API 0.161.0+26.2**. Wire protocol은 v4입니다. 런타임 등록에는 새 API JAR과 서버 플러그인이 필요하며, 기존 v4 클라이언트와도 동작합니다.
+Maven 좌표: **`tmin.click:skm-api:1.2.1`**. 대상 환경: **Minecraft 26.2 / Java 25 / Paper 26.2 / Fabric Loader 0.19.5+ / Fabric API 0.161.0+26.2**. Wire protocol은 v4입니다. 런타임 등록에는 새 API JAR과 서버 플러그인이 필요하며, 기존 v4 클라이언트와도 동작합니다.
 
 ## 빌드
 
@@ -26,15 +26,15 @@ export PATH="$JAVA_HOME/bin:$PATH"
 산출물:
 
 ```text
-skm-api/build/libs/skm-api-1.2.0.jar
-paper-plugin/build/libs/SKM-Server-1.2.0.jar
-fabric-client/build/libs/skm-client-26.2-1.2.0.jar
+skm-api/build/libs/skm-api-1.2.1.jar
+paper-plugin/build/libs/SKM-Server-1.2.1.jar
+fabric-client/build/libs/skm-client-26.2-1.2.1.jar
 examples/examplewithskm/build/libs/examplewithskm.jar
 ```
 
 ## 다른 Paper 플러그인에서 의존성으로 받기
 
-API의 1.2.0 Maven 좌표는 `tmin.click:skm-api:1.2.0`입니다. GitHub Packages 게시 및 접근 설정은 [API 연동·배포 가이드](docs/API.md)를 참고하세요. 오프라인/로컬 개발 시에는 프로젝트에서 한 번 설치할 수 있습니다.
+API의 1.2.1 Maven 좌표는 `tmin.click:skm-api:1.2.1`입니다. GitHub Packages 게시 및 접근 설정은 [API 연동·배포 가이드](docs/API.md)를 참고하세요. 오프라인/로컬 개발 시에는 프로젝트에서 한 번 설치할 수 있습니다.
 
 ```bash
 ./gradlew :skm-api:publishToMavenLocal
@@ -49,7 +49,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'tmin.click:skm-api:1.2.0'
+    compileOnly 'tmin.click:skm-api:1.2.1'
     compileOnly 'io.papermc.paper:paper-api:26.2.build.124-stable'
 }
 ```
@@ -58,8 +58,8 @@ dependencies {
 
 ## 설치와 업그레이드
 
-1. 서버를 종료하고 기존 SKM 서버 플러그인을 `plugins/`에서 제거한 뒤 `skm-server-1.2.0.jar`를 설치합니다.
-2. 클라이언트의 `mods/`에서 기존 SKM 클라이언트 JAR을 제거하고 `skm-client-1.2.0-26.2-fabric.jar`를 설치합니다. 기존 JAR과 새 JAR을 함께 두지 마세요.
+1. 서버를 종료하고 기존 SKM 서버 플러그인을 `plugins/`에서 제거한 뒤 `skm-server-1.2.1.jar`를 설치합니다.
+2. 클라이언트의 `mods/`에서 기존 SKM 클라이언트 JAR을 제거하고 `skm-client-1.2.1-26.2-fabric.jar`를 설치합니다. 기존 JAR과 새 JAR을 함께 두지 마세요.
 3. 선택 사항으로 `examplewithskm.jar`를 Paper 서버의 `plugins/` 폴더에 설치해 런타임 API 예제를 실행할 수 있습니다.
 4. 서버를 시작합니다. 이전 버전 데이터 폴더의 `config.yml`, `actions.yml`은 `plugins/SKM/`로 자동 복사됩니다. 새 위치에 파일이 이미 있으면 덮어쓰지 않습니다.
 5. 기존 서버별 캐시와 키 설정은 사용할 때 `.minecraft/config/skm/`로 자동 복사됩니다. 원본 파일은 삭제하지 않습니다.

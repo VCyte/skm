@@ -4,7 +4,7 @@ plugins {
 
 group = 'tmin.click.examples'
 def standalone = rootProject == project
-def defaultSkmVersion = standalone ? '1.2.0' : rootProject.version.toString()
+def defaultSkmVersion = standalone ? '1.2.1' : rootProject.version.toString()
 def skmVersion = providers.gradleProperty('skmVersion').getOrElse(defaultSkmVersion)
 if (standalone) {
     version = skmVersion

@@ -4,7 +4,7 @@ Paper consumer plugin showing how to add and remove an SKM key at runtime. It re
 
 ## What it demonstrates
 
-- `/examplewithskm add` registers `examplewithskm.ping` through `ActionRegistrationService`; connected compatible clients receive the binding immediately.
+- `/examplewithskm add` registers `examplewithskm.ping` through `ActionRegistrationService`; connected compatible clients receive the binding on the next server tick.
 - `/examplewithskm remove` removes the action and its binding from connected clients.
 - Pressing the default `J` key calls this plugin's `ActionExecutionService` handler and sends a private confirmation only to the player who pressed it. Replace the sample response with server-side game logic.
 - SKM automatically removes all actions owned by this plugin when it is disabled.
@@ -30,7 +30,7 @@ First install the matching API artifact to the local Maven repository from the S
 ```bash
 ./gradlew :skm-api:publishToMavenLocal
 cd examples/examplewithskm
-./gradlew -PskmVersion=1.2.0 clean build
+./gradlew -PskmVersion=1.2.1 clean build
 ```
 
 Alternatively, configure GitHub Packages credentials with `read:packages`; see [the SKM API guide](https://github.com/VCyte/skm/blob/main/docs/API.md). The generated JAR name remains `examplewithskm.jar` for every SKM version.

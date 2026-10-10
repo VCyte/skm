@@ -7,7 +7,7 @@ SKM API는 별도 Paper 플러그인이 SKM 입력을 받도록 공개한 Java A
 ```text
 group:    tmin.click
 artifact: skm-api
-version:  1.2.0
+version:  1.2.1
 ```
 
 주요 API 타입은 `io.github.skm.api` 패키지에 있습니다.
@@ -30,12 +30,12 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'tmin.click:skm-api:1.2.0'
+    compileOnly 'tmin.click:skm-api:1.2.1'
     compileOnly 'io.papermc.paper:paper-api:26.2.build.124-stable'
 }
 ```
 
-서버에 `SKM-Server-1.2.0.jar`도 설치해야 합니다. 소비 플러그인의 `plugin.yml`에 로드 의존성을 넣어 SKM API 클래스를 런타임에 사용할 수 있게 합니다.
+서버에 `SKM-Server-1.2.1.jar`도 설치해야 합니다. 소비 플러그인의 `plugin.yml`에 로드 의존성을 넣어 SKM API 클래스를 런타임에 사용할 수 있게 합니다.
 
 ```yaml
 name: MyGameSkills
@@ -130,7 +130,7 @@ public final class MySkills extends JavaPlugin implements ActionExecutionService
 ./gradlew :skm-api:publishToMavenLocal
 ```
 
-이 명령은 API를 현재 PC의 `~/.m2/repository/tmin/click/skm-api/1.2.0/`에 설치합니다. `mavenLocal()`을 선언한 다른 프로젝트에서 사용할 수 있지만, 다른 개발자나 CI 서버에 자동으로 공유되지는 않습니다.
+이 명령은 API를 현재 PC의 `~/.m2/repository/tmin/click/skm-api/1.2.1/`에 설치합니다. `mavenLocal()`을 선언한 다른 프로젝트에서 사용할 수 있지만, 다른 개발자나 CI 서버에 자동으로 공유되지는 않습니다.
 
 ## GitHub 소스 저장소 업데이트
 
@@ -139,10 +139,10 @@ public final class MySkills extends JavaPlugin implements ActionExecutionService
 ```bash
 git clone https://github.com/VCyte/skm.git
 cd skm
-git switch -c release/1.2.0
+git switch -c release/1.2.1
 git add .
-git commit -m "Prepare SKM 1.2.0"
-git push -u origin release/1.2.0
+git commit -m "Prepare SKM 1.2.1"
+git push -u origin release/1.2.1
 ```
 
 저장소를 공개로 만들지는 사용자가 선택해야 합니다. 저장소 생성 후에는 GitHub 웹 화면에서 저장소 이름과 공개/비공개 설정을 확인하세요.
@@ -158,7 +158,7 @@ read -s SKM_MAVEN_PASSWORD; export SKM_MAVEN_PASSWORD
 ./gradlew :skm-api:publish
 ```
 
-Release workflow가 성공하면 `tmin.click:skm-api:1.2.0`이 GitHub Packages에 게시됩니다. Apache Maven registry는 repository-scoped이므로 패키지의 접근 범위는 연결된 저장소를 따릅니다. `VCyte/skm`은 이미 공개 저장소이며 Maven 패키지만 따로 공개/비공개로 바꾸는 설정은 지원되지 않습니다. 다만 GitHub Maven registry는 **공개 패키지도 다운로드 시 인증을 요구**합니다. 외부 소비자는 `read:packages` 권한의 Personal Access Token (classic)을 Gradle 인증값으로 사용하세요. GitHub Actions의 `GITHUB_TOKEN`은 소비 workflow가 있는 저장소에 해당 패키지의 읽기 권한이 허용된 경우에만 사용할 수 있습니다.[3]
+Release workflow가 성공하면 `tmin.click:skm-api:1.2.1`이 GitHub Packages에 게시됩니다. Apache Maven registry는 repository-scoped이므로 패키지의 접근 범위는 연결된 저장소를 따릅니다. `VCyte/skm`은 이미 공개 저장소이며 Maven 패키지만 따로 공개/비공개로 바꾸는 설정은 지원되지 않습니다. 다만 GitHub Maven registry는 **공개 패키지도 다운로드 시 인증을 요구**합니다. 외부 소비자는 `read:packages` 권한의 Personal Access Token (classic)을 Gradle 인증값으로 사용하세요. GitHub Actions의 `GITHUB_TOKEN`은 소비 workflow가 있는 저장소에 해당 패키지의 읽기 권한이 허용된 경우에만 사용할 수 있습니다.[3]
 
 ```groovy
 repositories {
@@ -171,7 +171,7 @@ repositories {
     }
 }
 dependencies {
-    compileOnly "tmin.click:skm-api:1.2.0"
+    compileOnly "tmin.click:skm-api:1.2.1"
 }
 ```
 
