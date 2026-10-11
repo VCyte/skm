@@ -8,7 +8,7 @@ SKM API는 **다른 Paper 플러그인이 서버 소유 키 액션을 등록하�
 - 동작을 확인할 수 있는 전체 예제: [`examples/examplewithskm`](../examples/examplewithskm/README.md) — 명령으로 런타임 바인딩 추가/제거와 재시작 복구
 - 공개 API 좌표와 게시 안내: [API 연동·배포 가이드](API.md)
 
-대상 조합은 **Paper 26.2 / Java 25 / SKM API 1.2.1**입니다. 접속 플레이어에게는 Minecraft 26.2용 Fabric Loader, Fabric API, SKM 클라이언트 모드도 필요합니다. Paper 플러그인만으로 사용자의 조작 메뉴를 바꿀 수는 없습니다.
+대상 조합은 **Paper 26.2 / Java 25 / SKM API 1.2.2**입니다. 접속 플레이어에게는 Minecraft 26.2용 Fabric Loader, Fabric API, SKM 클라이언트 모드도 필요합니다. Paper 플러그인만으로 사용자의 조작 메뉴를 바꿀 수는 없습니다.
 
 ## 의존성 구성
 
@@ -28,7 +28,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'tmin.click:skm-api:1.2.1'
+    compileOnly 'tmin.click:skm-api:1.2.2'
     compileOnly 'io.papermc.paper:paper-api:26.2.build.124-stable'
 }
 ```

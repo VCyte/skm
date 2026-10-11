@@ -4,7 +4,7 @@ plugins {
 
 def standalone = rootProject == project
 def pluginVersion = providers.gradleProperty('pluginVersion').getOrElse('0.1.0-SNAPSHOT')
-def skmApiVersion = providers.gradleProperty('skmApiVersion').getOrElse('1.2.1')
+def skmApiVersion = providers.gradleProperty('skmApiVersion').getOrElse('1.2.2')
 
 group = providers.gradleProperty('pluginGroup').getOrElse('dev.example')
 version = pluginVersion

@@ -51,7 +51,8 @@ public final class BridgeNetwork {
         ClientPlayNetworking.registerGlobalReceiver(BridgePayloads.Sync.TYPE, (payload, context) ->
                 receive(payload.data(), syncLimit, context.client(), this::handleSync));
         ClientPlayNetworking.registerGlobalReceiver(BridgePayloads.Feedback.TYPE, (payload, context) ->
-                receive(payload.data(), feedbackLimit, context.client(), feedback::accept));
+                receive(payload.data(), feedbackLimit, context.client(), json ->
+                        feedback.accept(json, ActionKeyBindings::hasAction)));
     }
 
     private void receive(byte[] data, PacketRateLimiter limiter, Minecraft client,

@@ -96,6 +96,10 @@ public final class ActionKeyBindings {
         SKMClient.LOGGER.info("Registered {} SKM server-specific key binding(s) for '{}'.", BINDINGS.size(), signature);
     }
 
+    static boolean hasAction(String actionId) {
+        return actionId != null && ACTIONS.containsKey(actionId);
+    }
+
     static void clearServerActions() {
         releaseAll();
         KEY_CONFIG.capture(ACTIONS, BINDINGS);

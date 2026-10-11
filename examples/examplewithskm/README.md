@@ -36,7 +36,7 @@ First install the matching API artifact to the local Maven repository from the S
 ```bash
 ./gradlew :skm-api:publishToMavenLocal
 cd examples/examplewithskm
-./gradlew -PskmVersion=1.2.1 clean build
+./gradlew -PskmVersion=1.2.2 clean build
 ```
 
 Alternatively, configure GitHub Packages credentials with `read:packages`; see [the SKM API guide](https://github.com/VCyte/skm/blob/main/docs/API.md). The generated JAR name remains `examplewithskm.jar` for every SKM version.

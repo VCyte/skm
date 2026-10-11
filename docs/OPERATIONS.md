@@ -44,7 +44,7 @@ actions:
 - 사용하지 않는 action은 YAML에서 삭제하면 됩니다. 유효하지 않은 변경은 마지막 정상 registry를 유지합니다.
 - 저장 즉시 기본 5초 감시 또는 `/skm reload`로 검증되며, 의미 있는 변경은 새 revision으로 sync됩니다.
 
-액션을 소비 플러그인에서 직접 관리하려면 `tmin.click:skm-api:1.2.1`의 `ActionRegistrationService`를 사용합니다. 플러그인이 `onEnable()`에서 `ActionDefinition`과 해당 플러그인의 `ActionExecutionService` handler를 등록하면, SKM은 접속 중인 호환 클라이언트에 키 항목을 다음 서버 tick에 반영합니다. `unregister(owner, id)`로 한 개를 제거하거나 `unregisterAll(owner)`로 플러그인 소유 액션을 모두 제거할 수 있습니다. 플러그인 disable 때도 SKM이 자동 정리합니다. 런타임 등록 액션은 YAML에 중복으로 선언하지 마세요.
+액션을 소비 플러그인에서 직접 관리하려면 `tmin.click:skm-api:1.2.2`의 `ActionRegistrationService`를 사용합니다. 플러그인이 `onEnable()`에서 `ActionDefinition`과 해당 플러그인의 `ActionExecutionService` handler를 등록하면, SKM은 접속 중인 호환 클라이언트에 키 항목을 다음 서버 tick에 반영합니다. `unregister(owner, id)`로 한 개를 제거하거나 `unregisterAll(owner)`로 플러그인 소유 액션을 모두 제거할 수 있습니다. 플러그인 disable 때도 SKM이 자동 정리합니다. 런타임 등록 액션은 YAML에 중복으로 선언하지 마세요.
 
 ## 플레이어 확인 절차
 

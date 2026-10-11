@@ -1,3 +1,10 @@
+# SKM 1.2.2 security maintenance release
+
+- Bound and cleaned client feedback cooldown state.
+- Ignore feedback for actions not present in the active server action list.
+- Pin CI action references and Gradle distribution checksum.
+- Require Fabric API 0.161.0+26.2 or newer.
+
 # SKM 릴리스 노트
 
 ## 1.2.1 — Protocol v4 입력 보안 강화
