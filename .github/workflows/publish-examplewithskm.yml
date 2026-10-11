@@ -31,8 +31,14 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
 
-      - name: Build the API-matched example plugin
-        run: bash ./gradlew --no-daemon :examplewithskm:clean :examplewithskm:build
+      - name: Build the API-matched example and starter
+        run: |
+          set -euo pipefail
+          tasks=(--no-daemon :examplewithskm:clean :examplewithskm:build)
+          if [[ -d examples/plugin-template ]]; then
+            tasks+=( :plugin-template:clean :plugin-template:build )
+          fi
+          bash ./gradlew "${tasks[@]}"
 
       - name: Package version-matched source
         env:
@@ -46,6 +52,12 @@ jobs:
             HEAD examples/examplewithskm \
             > "$RUNNER_TEMP/release-assets/examplewithskm-source-${version}.zip"
           cp examples/examplewithskm/build/libs/examplewithskm.jar "$RUNNER_TEMP/release-assets/examplewithskm.jar"
+          if [[ -d examples/plugin-template ]]; then
+            git archive --format=zip \
+              --prefix="skm-plugin-template-${version}/" \
+              HEAD examples/plugin-template \
+              > "$RUNNER_TEMP/release-assets/skm-plugin-template-${version}.zip"
+          fi
 
       - name: Upload example JAR and source ZIP
         env:
@@ -53,10 +65,15 @@ jobs:
           RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
           REPOSITORY: ${{ github.repository }}
         run: |
-          gh release upload "$RELEASE_TAG" \
-            "$RUNNER_TEMP/release-assets/examplewithskm.jar" \
-            "$RUNNER_TEMP/release-assets/examplewithskm-source-${RELEASE_TAG#v}.zip" \
-            --repo "$REPOSITORY" --clobber
+          set -euo pipefail
+          version="${RELEASE_TAG#v}"
+          assets=(
+            "$RUNNER_TEMP/release-assets/examplewithskm.jar"
+            "$RUNNER_TEMP/release-assets/examplewithskm-source-${version}.zip"
+          )
+          template_zip="$RUNNER_TEMP/release-assets/skm-plugin-template-${version}.zip"
+          if [[ -f "$template_zip" ]]; then assets+=("$template_zip"); fi
+          gh release upload "$RELEASE_TAG" "${assets[@]}" --repo "$REPOSITORY" --clobber
 
       - name: Rebuild SHA256SUMS for all release JAR and ZIP assets
         env:

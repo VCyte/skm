@@ -15,5 +15,6 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = 'skm-26.2'
-include 'skm-api', 'paper-plugin', 'fabric-client', 'examplewithskm'
+include 'skm-api', 'paper-plugin', 'fabric-client', 'examplewithskm', 'plugin-template'
 project(':examplewithskm').projectDir = file('examples/examplewithskm')
+project(':plugin-template').projectDir = file('examples/plugin-template')

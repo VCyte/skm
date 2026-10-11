@@ -1,0 +1,10 @@
+name: MySKMPlugin
+version: '${version}'
+main: dev.example.skmplugin.MySKMPlugin
+api-version: '26.2'
+depend: [SKM]
+description: Copyable Paper plugin starter with a runtime SKM action.
+permissions:
+  myskmplugin.ability.use:
+    description: Allows using the example ability bound through SKM.
+    default: true

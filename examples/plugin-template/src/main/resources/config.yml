@@ -1,0 +1,10 @@
+# Keep action.id stable after publishing; players' per-server key overrides use this ID.
+action:
+  id: myskmplugin.ability
+  display-name: "Example Ability"
+  default-key: "key.keyboard.g"
+  cooldown-ms: 1000
+  category: "MySKMPlugin"
+  holdable: false
+  permission: "myskmplugin.ability.use"
+  required-level: 0

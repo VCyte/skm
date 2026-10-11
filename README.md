@@ -20,7 +20,7 @@ Maven 좌표: **`tmin.click:skm-api:1.2.1`**. 대상 환경: **Minecraft 26.2 / 
 ```bash
 export JAVA_HOME=/path/to/jdk-25
 export PATH="$JAVA_HOME/bin:$PATH"
-./gradlew clean build :examplewithskm:build
+./gradlew clean build :examplewithskm:build :plugin-template:build
 ```
 
 산출물:
@@ -30,6 +30,7 @@ skm-api/build/libs/skm-api-1.2.1.jar
 paper-plugin/build/libs/SKM-Server-1.2.1.jar
 fabric-client/build/libs/skm-client-26.2-1.2.1.jar
 examples/examplewithskm/build/libs/examplewithskm.jar
+examples/plugin-template/build/libs/my-skm-plugin-0.1.0-SNAPSHOT.jar
 ```
 
 ## 다른 Paper 플러그인에서 의존성으로 받기
@@ -55,6 +56,10 @@ dependencies {
 ```
 
 서버에는 `SKM-Server`도 설치하고 소비 플러그인의 `plugin.yml`에 `depend: [SKM]`을 넣어야 합니다. 소비 플러그인은 `ActionRegistrationService`로 액션을 런타임에 등록·해제하고, 등록 시 지정한 `ActionExecutionService` 구현으로 해당 입력을 처리할 수 있습니다. [`examplewithskm` 프로젝트](examples/examplewithskm/README.md)는 명령으로 바인딩을 추가·제거하고, 입력을 핸들러에 연결하는 전체 예제입니다. [API 연동·배포 가이드](docs/API.md)도 참고하세요.
+
+## 플러그인 개발자 스타터
+
+새 프로젝트는 복사 가능한 [`examples/plugin-template`](examples/plugin-template/README.md)에서 시작하세요. `depend: [SKM]`, `compileOnly` API 의존성, 설정 기반 액션, 메인 스레드 등록, 비활성화 정리, 서버 측 handler 틀이 포함되어 있습니다. [플러그인 개발자 가이드](docs/PLUGIN-DEVELOPMENT.md)는 holdable, 권한/레벨, 결과 코드, 보안 규칙, 테스트 방법까지 설명합니다. 전체 저장소 빌드에서 `bash ./gradlew :plugin-template:build`로 템플릿도 컴파일됩니다.
 
 ## 설치와 업그레이드
 

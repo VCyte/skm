@@ -1,0 +1,64 @@
+plugins {
+    id 'java'
+}
+
+def standalone = rootProject == project
+def pluginVersion = providers.gradleProperty('pluginVersion').getOrElse('0.1.0-SNAPSHOT')
+def skmApiVersion = providers.gradleProperty('skmApiVersion').getOrElse('1.2.1')
+
+group = providers.gradleProperty('pluginGroup').getOrElse('dev.example')
+version = pluginVersion
+
+base {
+    archivesName = 'my-skm-plugin'
+}
+
+repositories {
+    mavenLocal()
+    maven { url = 'https://repo.papermc.io/repository/maven-public/' }
+
+    if (standalone) {
+        // GitHub Packages may require read:packages credentials even for public packages.
+        maven {
+            name = 'githubPackages'
+            url = uri('https://maven.pkg.github.com/vcyte/skm')
+            def user = providers.gradleProperty('gpr.user')
+                    .orElse(providers.environmentVariable('GITHUB_ACTOR')).orNull
+            def token = providers.gradleProperty('gpr.key')
+                    .orElse(providers.environmentVariable('GITHUB_TOKEN')).orNull
+            if (user != null && token != null) {
+                credentials {
+                    username = user
+                    password = token
+                }
+            }
+        }
+    }
+}
+
+dependencies {
+    if (standalone) {
+        compileOnly "tmin.click:skm-api:${skmApiVersion}"
+    } else {
+        compileOnly project(':skm-api')
+    }
+    compileOnly 'io.papermc.paper:paper-api:26.2.build.124-stable'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 25
+    options.encoding = 'UTF-8'
+}
+
+tasks.processResources {
+    inputs.property('version', project.version)
+    filesMatching('plugin.yml') {
+        expand(version: project.version)
+    }
+}
