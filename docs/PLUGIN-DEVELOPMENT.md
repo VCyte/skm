@@ -176,7 +176,7 @@ SKM 입력은 **플레이어의 입력 의도**만 나타내며, 공격력·대�
 
 ## 스타터 프로젝트와 빌드
 
-저장소의 [`examples/plugin-template`](../examples/plugin-template/README.md)은 복사해 쓸 수 있는 Paper 프로젝트입니다. 설정 파일에서 액션 메타데이터를 읽고, enable 때 런타임 등록, disable 때 정리, 서버 측 handler를 포함합니다. 저장소 전체 Gradle 빌드에도 들어 있으므로 `./gradlew :plugin-template:build`로 검증할 수 있습니다.
+저장소의 [`examples/plugin-template`](../examples/plugin-template/README.md)은 복사해 쓸 수 있는 low-config Paper 프로젝트입니다. 다중 액션 YAML 파서/검증, owner-scoped `ActionManager`, 등록 실패 시 이전 action set 복구, `/myskmplugin status|reload`, permission, `PlayerActionEvent` hook, holdable player-quit 정리 예시를 포함합니다. 게임의 실제 효과와 custom handler route만 개발자가 채우면 됩니다. `./gradlew :plugin-template:test :plugin-template:build`는 config parser와 rollback 동작도 검증합니다.
 
 동작 예제 [`examples/examplewithskm`](../examples/examplewithskm/README.md)은 관리 명령으로 액션을 런타임 추가/제거하고 그 on/off 선택을 로컬 YAML에 보존하는 과정을 보여줍니다. 릴리스 태그에 템플릿이 포함된 버전부터 릴리스 workflow가 스타터 소스 ZIP도 첨부합니다.
 

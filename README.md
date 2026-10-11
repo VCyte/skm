@@ -59,7 +59,7 @@ dependencies {
 
 ## 플러그인 개발자 스타터
 
-새 프로젝트는 복사 가능한 [`examples/plugin-template`](examples/plugin-template/README.md)에서 시작하세요. `depend: [SKM]`, `compileOnly` API 의존성, 설정 기반 액션, 메인 스레드 등록, 비활성화 정리, 서버 측 handler 틀이 포함되어 있습니다. [플러그인 개발자 가이드](docs/PLUGIN-DEVELOPMENT.md)는 holdable, 권한/레벨, 결과 코드, 보안 규칙, 테스트 방법까지 설명합니다. 전체 저장소 빌드에서 `bash ./gradlew :plugin-template:build`로 템플릿도 컴파일됩니다.
+새 프로젝트는 복사 가능한 [`examples/plugin-template`](examples/plugin-template/README.md)에서 시작하세요. `depend: [SKM]`, `compileOnly` API 의존성, 여러 액션의 YAML 설정·검증, 소유 액션 수명주기와 reload rollback, `/myskmplugin status|reload`, holdable 정리 hook, 테스트가 들어 있습니다. 게임 규칙과 실제 효과만 개발자가 채우면 됩니다. [플러그인 개발자 가이드](docs/PLUGIN-DEVELOPMENT.md)는 권한/레벨, 이벤트, 결과 코드, 보안 규칙까지 설명하며, `./gradlew :plugin-template:test :plugin-template:build`로 템플릿을 검증합니다.
 
 ## 설치와 업그레이드
 

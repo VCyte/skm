@@ -3,8 +3,20 @@ version: '${version}'
 main: dev.example.skmplugin.MySKMPlugin
 api-version: '26.2'
 depend: [SKM]
-description: Copyable Paper plugin starter with a runtime SKM action.
+description: Copyable Paper starter with configurable runtime SKM actions.
+commands:
+  myskmplugin:
+    description: Show or reload this plugin's SKM actions.
+    usage: /myskmplugin <status|reload>
+    permission: myskmplugin.admin
+    aliases: [myskmp]
 permissions:
+  myskmplugin.admin:
+    description: Allows inspecting and reloading MySKMPlugin actions.
+    default: op
   myskmplugin.ability.use:
     description: Allows using the example ability bound through SKM.
+    default: true
+  myskmplugin.charge.use:
+    description: Allows using the example hold action bound through SKM.
     default: true

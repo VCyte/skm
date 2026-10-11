@@ -1,10 +1,24 @@
-# Keep action.id stable after publishing; players' per-server key overrides use this ID.
-action:
-  id: myskmplugin.ability
-  display-name: "Example Ability"
-  default-key: "key.keyboard.g"
-  cooldown-ms: 1000
-  category: "MySKMPlugin"
-  holdable: false
-  permission: "myskmplugin.ability.use"
-  required-level: 0
+# Edit this list to add/remove actions. Keep IDs stable after publishing so player key overrides survive.
+# The handler value selects a route in MySKMPlugin.execute(); add your own route there for custom behavior.
+actions:
+  - id: myskmplugin.ability
+    enabled: true
+    handler: ability
+    display-name: "Example Ability"
+    default-key: "key.keyboard.g"
+    cooldown-ms: 1000
+    category: "MySKMPlugin"
+    holdable: false
+    permission: "myskmplugin.ability.use"
+    required-level: 0
+
+  - id: myskmplugin.charge
+    enabled: true
+    handler: charge
+    display-name: "Example Hold"
+    default-key: "key.keyboard.h"
+    cooldown-ms: 500
+    category: "MySKMPlugin"
+    holdable: true
+    permission: "myskmplugin.charge.use"
+    required-level: 0
