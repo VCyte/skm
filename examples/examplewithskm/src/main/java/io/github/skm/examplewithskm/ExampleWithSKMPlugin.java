@@ -7,12 +7,14 @@ import io.github.skm.api.ActionResult;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/** Demonstrates plugin-owned SKM key registration and removal at runtime. */
+/** Demonstrates plugin-owned SKM key registration, persistence and removal at runtime. */
 public final class ExampleWithSKMPlugin extends JavaPlugin implements ActionExecutionService, CommandExecutor {
     private static final String ACTION_ID = "examplewithskm.ping";
+    private static final String ENABLED_PATH = "action.enabled";
     private static final ActionDefinition ACTION = new ActionDefinition(
             ACTION_ID,
             "ExampleWithSKM Ping",
@@ -29,16 +31,28 @@ public final class ExampleWithSKMPlugin extends JavaPlugin implements ActionExec
 
     @Override
     public void onEnable() {
+        saveDefaultConfig();
         actions = getServer().getServicesManager().load(ActionRegistrationService.class);
         if (actions == null) {
             throw new IllegalStateException("SKM ActionRegistrationService is not available");
         }
 
-        if (getCommand("examplewithskm") == null) {
+        PluginCommand command = getCommand("examplewithskm");
+        if (command == null) {
             throw new IllegalStateException("examplewithskm command is missing from plugin.yml");
         }
-        getCommand("examplewithskm").setExecutor(this);
-        getLogger().info("ExampleWithSKM enabled. Use /examplewithskm add to register its key.");
+        command.setExecutor(this);
+
+        if (getConfig().getBoolean(ENABLED_PATH, false)) {
+            String error = registerAction();
+            if (error == null) {
+                getLogger().info("Restored saved runtime action " + ACTION_ID + ".");
+            } else {
+                // Keep the desired state so a later restart can retry after the conflict is fixed.
+                getLogger().warning("Could not restore " + ACTION_ID + ": " + error);
+            }
+        }
+        getLogger().info("ExampleWithSKM enabled. Use /examplewithskm add|remove to manage its key.");
     }
 
     @Override
@@ -61,25 +75,31 @@ public final class ExampleWithSKMPlugin extends JavaPlugin implements ActionExec
                 sender.sendMessage("ExampleWithSKM key is already registered.");
                 return true;
             }
-            try {
-                actions.register(this, ACTION, this);
-                registered = true;
-                sender.sendMessage("ExampleWithSKM key added for connected SKM clients.");
-            } catch (IllegalArgumentException exception) {
-                sender.sendMessage("Could not register ExampleWithSKM key: " + exception.getMessage());
+            String error = registerAction();
+            if (error != null) {
+                sender.sendMessage("Could not register ExampleWithSKM key: " + error);
+                return true;
             }
+            saveDesiredState(true);
+            sender.sendMessage("ExampleWithSKM key added. It will be restored after restart.");
             return true;
         }
 
         if ("remove".equalsIgnoreCase(args[0])) {
-            if (!registered) {
-                sender.sendMessage("ExampleWithSKM key is not registered.");
+            boolean removed = actions.unregister(this, ACTION_ID);
+            boolean desiredEnabled = getConfig().getBoolean(ENABLED_PATH, false);
+            if (!removed && !desiredEnabled) {
+                sender.sendMessage(registered
+                        ? "Could not remove the ExampleWithSKM key."
+                        : "ExampleWithSKM key is not registered.");
                 return true;
             }
-            registered = !actions.unregister(this, ACTION_ID);
-            sender.sendMessage(registered
-                    ? "Could not remove the ExampleWithSKM key."
-                    : "ExampleWithSKM key removed from connected SKM clients.");
+
+            registered = false;
+            saveDesiredState(false);
+            sender.sendMessage(removed
+                    ? "ExampleWithSKM key removed; it will stay disabled after restart."
+                    : "Saved enable state cleared; the key was not active.");
             return true;
         }
 
@@ -94,5 +114,20 @@ public final class ExampleWithSKMPlugin extends JavaPlugin implements ActionExec
             player.sendMessage("ExampleWithSKM: SKM input received.");
         }
         return ActionResult.SUCCESS;
+    }
+
+    private String registerAction() {
+        try {
+            actions.register(this, ACTION, this);
+            registered = true;
+            return null;
+        } catch (IllegalArgumentException exception) {
+            return exception.getMessage();
+        }
+    }
+
+    private void saveDesiredState(boolean enabled) {
+        getConfig().set(ENABLED_PATH, enabled);
+        saveConfig();
     }
 }

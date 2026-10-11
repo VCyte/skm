@@ -1,0 +1,4 @@
+# Runtime action definitions are registered by the plugin on startup when this flag is true.
+# The action itself remains owned by ExampleWithSKM code; this file stores only the desired toggle.
+action:
+  enabled: false

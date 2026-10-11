@@ -5,7 +5,7 @@ SKM API는 **다른 Paper 플러그인이 서버 소유 키 액션을 등록하�
 ## 빠른 시작 경로
 
 - 바로 복사해 시작: [`examples/plugin-template`](../examples/plugin-template/README.md)
-- 동작을 확인할 수 있는 전체 예제: [`examples/examplewithskm`](../examples/examplewithskm/README.md) — 명령으로 런타임 바인딩 추가/제거
+- 동작을 확인할 수 있는 전체 예제: [`examples/examplewithskm`](../examples/examplewithskm/README.md) — 명령으로 런타임 바인딩 추가/제거와 재시작 복구
 - 공개 API 좌표와 게시 안내: [API 연동·배포 가이드](API.md)
 
 대상 조합은 **Paper 26.2 / Java 25 / SKM API 1.2.1**입니다. 접속 플레이어에게는 Minecraft 26.2용 Fabric Loader, Fabric API, SKM 클라이언트 모드도 필요합니다. Paper 플러그인만으로 사용자의 조작 메뉴를 바꿀 수는 없습니다.
@@ -33,7 +33,7 @@ dependencies {
 }
 ```
 
-GitHub Packages의 Maven registry는 공개 패키지도 인증이 필요할 수 있습니다. 토큰은 환경 변수나 비밀 저장소로만 전달하고 소스에 커밋하지 마세요. 로컬에서 API를 테스트할 때는 SKM 저장소 루트에서 `bash ./gradlew :skm-api:publishToMavenLocal`을 실행하고 `mavenLocal()`을 사용하면 됩니다.
+GitHub Packages의 Maven registry는 공개 패키지도 인증이 필요할 수 있습니다. 토큰은 환경 변수나 비밀 저장소로만 전달하고 소스에 커밋하지 마세요. 로컬에서 API를 테스트할 때는 SKM 저장소 루트에서 `./gradlew :skm-api:publishToMavenLocal`을 실행하고 `mavenLocal()`을 사용하면 됩니다.
 
 `plugin.yml`은 SKM을 필수 의존성으로 선언합니다.
 
@@ -53,6 +53,10 @@ depend: [SKM]
 2. 고유하고 안정적인 ID를 가진 `ActionDefinition`과 `ActionExecutionService` handler를 등록합니다.
 3. handler에서 입력을 받은 뒤 **게임별 조건을 서버에서 다시 검증**하고 실제 효과를 적용합니다.
 4. `onDisable()`에서 `unregisterAll(this)`를 호출합니다. SKM도 소유 플러그인의 비활성화 때 액션을 자동 정리하지만, 명시적인 정리는 권장됩니다.
+
+> **등록은 실행 중 메모리에만 존재합니다.** SKM은 액션 ID나 Java handler를 서버 DB에 저장하지 않습니다. 플러그인은 시작 때 코드에서 액션을 다시 등록해야 합니다. 액션 ID는 플레이어 키 설정과 연결되는 안정적인 식별자이지 등록을 저장하는 저장소가 아닙니다.
+>
+> 사용자가 `/add`로 켜고 끄는 기능이라면 원하는 상태만 플러그인 자체 `config.yml`에 저장하고, 시작 때 그 값에 따라 다시 등록하면 충분합니다. 예제 [`examplewithskm`](../examples/examplewithskm/README.md)가 이 방식을 구현합니다. DB는 플레이어별 대량 데이터·조회·여러 서버 간 동기화가 필요할 때 소비 플러그인에서 선택하세요. SKM에 DB를 넣을 필요는 없습니다.
 
 ```java
 public final class MyGameSkills extends JavaPlugin implements ActionExecutionService {
@@ -172,9 +176,9 @@ SKM 입력은 **플레이어의 입력 의도**만 나타내며, 공격력·대�
 
 ## 스타터 프로젝트와 빌드
 
-저장소의 [`examples/plugin-template`](../examples/plugin-template/README.md)은 복사해 쓸 수 있는 Paper 프로젝트입니다. 설정 파일에서 액션 메타데이터를 읽고, enable 때 런타임 등록, disable 때 정리, 서버 측 handler를 포함합니다. 저장소 전체 Gradle 빌드에도 들어 있으므로 `bash ./gradlew :plugin-template:build`로 검증할 수 있습니다.
+저장소의 [`examples/plugin-template`](../examples/plugin-template/README.md)은 복사해 쓸 수 있는 Paper 프로젝트입니다. 설정 파일에서 액션 메타데이터를 읽고, enable 때 런타임 등록, disable 때 정리, 서버 측 handler를 포함합니다. 저장소 전체 Gradle 빌드에도 들어 있으므로 `./gradlew :plugin-template:build`로 검증할 수 있습니다.
 
-동작 예제 [`examples/examplewithskm`](../examples/examplewithskm/README.md)은 관리 명령으로 액션을 런타임 추가/제거하는 과정을 보여줍니다. 릴리스 workflow는 태그에 스타터가 포함된 버전부터 스타터 소스 ZIP도 릴리스 자산으로 첨부합니다.
+동작 예제 [`examples/examplewithskm`](../examples/examplewithskm/README.md)은 관리 명령으로 액션을 런타임 추가/제거하고 그 on/off 선택을 로컬 YAML에 보존하는 과정을 보여줍니다. 릴리스 태그에 템플릿이 포함된 버전부터 릴리스 workflow가 스타터 소스 ZIP도 첨부합니다.
 
 ## 검증 체크리스트
 
